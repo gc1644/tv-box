@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=TV Box
+Comment=Local TV and movie player
+Exec=your path/tv-box/run.sh
+Icon=video-x-generic
+Terminal=false
+Categories=AudioVideo;Video;

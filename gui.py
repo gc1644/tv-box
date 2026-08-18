@@ -1,4 +1,7 @@
 import tkinter as tk
+from pathlib import Path
+
+from PIL import Image, ImageTk
 
 from library import random_episode
 from player import play
@@ -13,11 +16,74 @@ class TVBox:
         self.root.geometry("1280x720")
         self.root.configure(bg="#111111")
 
+        # =========================
+        # BACKGROUNDS
+        # =========================
+
+        self.background_dir = Path(__file__).parent / "data" / "backgrounds"
+
+        self.backgrounds = {
+            "Simpsons": self.load_background("simpsons.jpeg"),
+            "Alf": self.load_background("alf.jpeg"),
+            "South Park": self.load_background("south-park.jpeg"),
+        }
+
+        self.background_image = None
+        self.background_label = None
+
         self.build_main_menu()
+
+    # =========================
+    # BACKGROUND
+    # =========================
+
+    def load_background(self, filename):
+        path = self.background_dir / filename
+
+        if not path.exists():
+            print(f"Background not found: {path}")
+            return None
+
+        image = Image.open(path)
+        image = image.resize((1280, 720), Image.Resampling.LANCZOS)
+
+        return ImageTk.PhotoImage(image)
+
+    def set_background(self, show_name=None):
+        # Remove old background
+        if self.background_label:
+            self.background_label.destroy()
+            self.background_label = None
+
+        # Main menu / screens without a background
+        if show_name not in self.backgrounds:
+            self.root.configure(bg="#111111")
+            return
+
+        self.background_image = self.backgrounds[show_name]
+
+        self.background_label = tk.Label(
+            self.root,
+            image=self.background_image,
+            borderwidth=0,
+        )
+
+        self.background_label.place(
+            x=0,
+            y=0,
+            relwidth=1,
+            relheight=1,
+        )
+
+        # Keep background behind everything else
+        self.background_label.lower()
 
     def clear(self):
         for widget in self.root.winfo_children():
             widget.destroy()
+
+        self.background_label = None
+        self.background_image = None
 
     def make_button(self, parent, text, bg, fg, command):
         return tk.Button(
@@ -41,6 +107,8 @@ class TVBox:
 
     def build_main_menu(self):
         self.clear()
+
+        self.root.configure(bg="#111111")
 
         title = tk.Label(
             self.root,
@@ -128,6 +196,8 @@ class TVBox:
     def show_show(self, show_name):
         self.clear()
 
+        self.set_background(show_name)
+
         tk.Label(
             self.root,
             text=show_name,
@@ -188,6 +258,8 @@ class TVBox:
     def show_season(self, show_name, season):
         self.clear()
 
+        self.set_background(show_name)
+
         tk.Label(
             self.root,
             text=f"{show_name} — {season}",
@@ -235,6 +307,8 @@ class TVBox:
 
     def show_random_result(self, episode, show_name):
         self.clear()
+
+        self.set_background(show_name)
 
         tk.Label(
             self.root,
@@ -314,7 +388,6 @@ class TVBox:
             show_name,
         )
 
-        # Don't immediately show the same episode
         while (
             new_episode == current_episode
             and len(self.library["shows"][show_name]) > 0
@@ -348,6 +421,8 @@ class TVBox:
 
     def show_movies(self):
         self.clear()
+
+        self.root.configure(bg="#111111")
 
         tk.Label(
             self.root,
