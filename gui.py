@@ -20,12 +20,18 @@ class TVBox:
         # BACKGROUNDS
         # =========================
 
-        self.background_dir = Path(__file__).parent / "data" / "backgrounds"
+        self.background_dir = (
+            Path(__file__).parent
+            / "data"
+            / "backgrounds"
+        )
 
         self.backgrounds = {
             "Simpsons": self.load_background("simpsons.jpeg"),
+            "Futurama": self.load_background("futurama.jpeg"),
             "Alf": self.load_background("alf.jpeg"),
             "South Park": self.load_background("south-park.jpeg"),
+            "SpongeBob": self.load_background("spongebob.jpeg"),
         }
 
         self.background_image = None
@@ -45,22 +51,29 @@ class TVBox:
             return None
 
         image = Image.open(path)
-        image = image.resize((1280, 720), Image.Resampling.LANCZOS)
+        image = image.resize(
+            (1280, 720),
+            Image.Resampling.LANCZOS,
+        )
 
         return ImageTk.PhotoImage(image)
 
     def set_background(self, show_name=None):
-        # Remove old background
         if self.background_label:
             self.background_label.destroy()
             self.background_label = None
 
-        # Main menu / screens without a background
         if show_name not in self.backgrounds:
             self.root.configure(bg="#111111")
             return
 
-        self.background_image = self.backgrounds[show_name]
+        image = self.backgrounds[show_name]
+
+        if image is None:
+            self.root.configure(bg="#111111")
+            return
+
+        self.background_image = image
 
         self.background_label = tk.Label(
             self.root,
@@ -75,8 +88,11 @@ class TVBox:
             relheight=1,
         )
 
-        # Keep background behind everything else
         self.background_label.lower()
+
+    # =========================
+    # GENERAL
+    # =========================
 
     def clear(self):
         for widget in self.root.winfo_children():
@@ -85,7 +101,14 @@ class TVBox:
         self.background_label = None
         self.background_image = None
 
-    def make_button(self, parent, text, bg, fg, command):
+    def make_button(
+        self,
+        parent,
+        text,
+        bg,
+        fg,
+        command,
+    ):
         return tk.Button(
             parent,
             text=text,
@@ -117,12 +140,14 @@ class TVBox:
             bg="#111111",
             fg="white",
         )
-        title.pack(pady=(40, 30))
+
+        title.pack(pady=(30, 20))
 
         button_frame = tk.Frame(
             self.root,
-            bg="#111111"
+            bg="#111111",
         )
+
         button_frame.pack(expand=True)
 
         # Simpsons
@@ -132,7 +157,26 @@ class TVBox:
             "#F5C518",
             "black",
             lambda: self.show_show("Simpsons"),
-        ).grid(row=0, column=0, padx=15, pady=15)
+        ).grid(
+            row=0,
+            column=0,
+            padx=15,
+            pady=10,
+        )
+
+        # Futurama
+        self.make_button(
+            button_frame,
+            "FUTURAMA",
+            "#245A9C",
+            "white",
+            lambda: self.show_show("Futurama"),
+        ).grid(
+            row=0,
+            column=1,
+            padx=15,
+            pady=10,
+        )
 
         # Alf
         self.make_button(
@@ -141,7 +185,12 @@ class TVBox:
             "#A0522D",
             "white",
             lambda: self.show_show("Alf"),
-        ).grid(row=0, column=1, padx=15, pady=15)
+        ).grid(
+            row=1,
+            column=0,
+            padx=15,
+            pady=10,
+        )
 
         # South Park
         self.make_button(
@@ -150,7 +199,26 @@ class TVBox:
             "#356B3D",
             "white",
             lambda: self.show_show("South Park"),
-        ).grid(row=1, column=0, padx=15, pady=15)
+        ).grid(
+            row=1,
+            column=1,
+            padx=15,
+            pady=10,
+        )
+
+        # SpongeBob
+        self.make_button(
+            button_frame,
+            "SPONGEBOB",
+            "#E7C600",
+            "black",
+            lambda: self.show_show("SpongeBob"),
+        ).grid(
+            row=2,
+            column=0,
+            padx=15,
+            pady=10,
+        )
 
         # Movies
         self.make_button(
@@ -159,20 +227,11 @@ class TVBox:
             "#333333",
             "white",
             self.show_movies,
-        ).grid(row=1, column=1, padx=15, pady=15)
-
-        # Random TV
-        self.make_button(
-            button_frame,
-            "🎲 RANDOM TV",
-            "#5C3A8A",
-            "white",
-            self.random_tv,
         ).grid(
             row=2,
-            column=0,
+            column=1,
             padx=15,
-            pady=15,
+            pady=10,
         )
 
         # Fireplace
@@ -183,10 +242,11 @@ class TVBox:
             "white",
             self.play_fireplace,
         ).grid(
-            row=2,
-            column=1,
+            row=3,
+            column=0,
+            columnspan=2,
             padx=15,
-            pady=15,
+            pady=10,
         )
 
     # =========================
@@ -198,13 +258,15 @@ class TVBox:
 
         self.set_background(show_name)
 
-        tk.Label(
+        title = tk.Label(
             self.root,
             text=show_name,
             font=("DejaVu Sans", 32, "bold"),
             bg="#111111",
             fg="white",
-        ).pack(pady=30)
+        )
+
+        title.pack(pady=(20, 15))
 
         if show_name not in self.library["shows"]:
 
@@ -218,10 +280,27 @@ class TVBox:
 
         else:
 
-            for season in self.library["shows"][show_name]:
+            season_frame = tk.Frame(
+                self.root,
+                bg="#111111",
+            )
 
-                self.make_button(
-                    self.root,
+            season_frame.pack(
+                expand=True,
+                pady=5,
+            )
+
+            seasons = list(
+                self.library["shows"][show_name].keys()
+            )
+
+            for index, season in enumerate(seasons):
+
+                row = index // 4
+                column = index % 4
+
+                button = self.make_button(
+                    season_frame,
                     season,
                     "#333333",
                     "white",
@@ -229,7 +308,20 @@ class TVBox:
                         show_name,
                         s,
                     ),
-                ).pack(pady=6)
+                )
+
+                button.config(
+                    width=12,
+                    height=2,
+                    font=("DejaVu Sans", 16, "bold"),
+                )
+
+                button.grid(
+                    row=row,
+                    column=column,
+                    padx=8,
+                    pady=5,
+                )
 
             # Random episode
             self.make_button(
@@ -237,8 +329,10 @@ class TVBox:
                 "🎲 RANDOM EPISODE",
                 "#555555",
                 "white",
-                lambda: self.random_show_episode(show_name),
-            ).pack(pady=20)
+                lambda: self.random_show_episode(
+                    show_name
+                ),
+            ).pack(pady=8)
 
         tk.Button(
             self.root,
@@ -249,7 +343,10 @@ class TVBox:
             fg="white",
             relief="flat",
             cursor="hand2",
-        ).pack(side="bottom", pady=30)
+        ).pack(
+            side="bottom",
+            pady=12,
+        )
 
     # =========================
     # SEASON MENU
@@ -266,17 +363,28 @@ class TVBox:
             font=("DejaVu Sans", 28, "bold"),
             bg="#111111",
             fg="white",
-        ).pack(pady=30)
+        ).pack(pady=25)
+
+        episode_frame = tk.Frame(
+            self.root,
+            bg="#111111",
+        )
+
+        episode_frame.pack(
+            expand=True,
+        )
 
         for episode in self.library["shows"][show_name][season]:
 
             self.make_button(
-                self.root,
+                episode_frame,
                 episode.stem,
                 "#333333",
                 "white",
                 lambda e=episode: self.play_episode(e),
-            ).pack(pady=6)
+            ).pack(
+                pady=6,
+            )
 
         tk.Button(
             self.root,
@@ -287,7 +395,10 @@ class TVBox:
             fg="white",
             relief="flat",
             cursor="hand2",
-        ).pack(side="bottom", pady=30)
+        ).pack(
+            side="bottom",
+            pady=15,
+        )
 
     # =========================
     # RANDOM EPISODE
@@ -380,7 +491,10 @@ class TVBox:
             fg="white",
             relief="flat",
             cursor="hand2",
-        ).pack(side="bottom", pady=30)
+        ).pack(
+            side="bottom",
+            pady=30,
+        )
 
     def reroll_episode(self, current_episode, show_name):
         new_episode = random_episode(
@@ -390,7 +504,9 @@ class TVBox:
 
         while (
             new_episode == current_episode
-            and len(self.library["shows"][show_name]) > 0
+            and len(
+                self.library["shows"][show_name]
+            ) > 0
         ):
             new_episode = random_episode(
                 self.library,
@@ -401,19 +517,6 @@ class TVBox:
             new_episode,
             show_name,
         )
-
-    # =========================
-    # RANDOM TV
-    # =========================
-
-    def random_tv(self):
-        episode = random_episode(self.library)
-
-        if episode:
-            self.show_random_result(
-                episode,
-                "RANDOM TV",
-            )
 
     # =========================
     # MOVIES
@@ -452,7 +555,9 @@ class TVBox:
                     "#333333",
                     "white",
                     lambda m=movie: self.play_episode(m),
-                ).pack(pady=6)
+                ).pack(
+                    pady=6,
+                )
 
         tk.Button(
             self.root,
@@ -463,7 +568,10 @@ class TVBox:
             fg="white",
             relief="flat",
             cursor="hand2",
-        ).pack(side="bottom", pady=30)
+        ).pack(
+            side="bottom",
+            pady=15,
+        )
 
     # =========================
     # PLAYER
@@ -472,7 +580,16 @@ class TVBox:
     def play_episode(self, episode):
         self.root.withdraw()
 
-        play(str(episode))
+        audio_track = None
+
+        # ALF uses audio track 2
+        if "Alf" in str(episode):
+            audio_track = 2
+
+        play(
+            str(episode),
+            audio_track=audio_track,
+        )
 
         self.root.deiconify()
 
@@ -482,7 +599,8 @@ class TVBox:
             self.root.withdraw()
 
             play(
-                str(self.library["fireplace"])
+                str(self.library["fireplace"]),
+                loop=True,
             )
 
             self.root.deiconify()

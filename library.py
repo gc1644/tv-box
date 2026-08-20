@@ -4,6 +4,11 @@ from pathlib import Path
 
 VIDEO_EXTENSIONS = {".mp4", ".mkv", ".avi", ".webm", ".mov"}
 
+def season_number(name):
+    try:
+        return int(name.lower().replace("season", "").strip())
+    except ValueError:
+        return 999
 
 def scan_library(directory):
     media = Path(directory)
@@ -50,7 +55,12 @@ def scan_library(directory):
                 seasons[season_dir.name] = sorted(episodes)
 
         if seasons:
-            library["shows"][item.name] = seasons
+            library["shows"][item.name] = dict(
+                sorted(
+                    seasons.items(),
+                    key=lambda season: season_number(season[0])
+                )
+            )
 
     return library
 
