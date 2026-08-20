@@ -1,6 +1,6 @@
 # TV Box
 
-A simple, mouse-friendly TV interface for Linux.
+A simple, mouse-friendly TV interface for Linux. Built with Python and plays media using mpv
 
 ## Screenshots
 
