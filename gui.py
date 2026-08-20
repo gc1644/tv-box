@@ -1,11 +1,10 @@
 import tkinter as tk
-import random
 from pathlib import Path
 
 from PIL import Image, ImageTk
 
 from library import random_episode
-from player import play, play_playlist
+from player import play, play_playlist, play_random
 
 
 class TVBox:
@@ -15,7 +14,7 @@ class TVBox:
         self.root = tk.Tk()
         self.root.title("TV BOX")
         self.root.geometry("1280x720")
-        self.root.configure(bg="#111111")
+        self.root.configure(bg="#151515")
 
         # =========================
         # BACKGROUNDS
@@ -67,13 +66,13 @@ class TVBox:
             self.background_label = None
 
         if show_name not in self.backgrounds:
-            self.root.configure(bg="#111111")
+            self.root.configure(bg="#151515")
             return
 
         image = self.backgrounds[show_name]
 
         if image is None:
-            self.root.configure(bg="#111111")
+            self.root.configure(bg="#151515")
             return
 
         self.background_image = image
@@ -116,13 +115,13 @@ class TVBox:
             parent,
             text=text,
             command=command,
-            font=("DejaVu Sans", 18, "bold"),
+            font=("DejaVu Sans", 20, "bold"),
             bg=bg,
             fg=fg,
             activebackground="#555555",
             activeforeground="white",
-            width=16,
-            height=2,
+            width=18,
+            height=3,
             relief="flat",
             cursor="hand2",
         )
@@ -145,6 +144,10 @@ class TVBox:
         )
 
         title.pack(pady=(25, 15))
+
+        # =========================
+        # SHOWS
+        # =========================
 
         button_frame = tk.Frame(
             self.root,
@@ -227,7 +230,7 @@ class TVBox:
         self.make_button(
             button_frame,
             "FRIENDS",
-            "#6A4C93",
+            "#6B4A3A",
             "white",
             lambda: self.show_show("Friends"),
         ).grid(
@@ -288,10 +291,10 @@ class TVBox:
         tk.Label(
             self.root,
             text=show_name,
-            font=("DejaVu Sans", 32, "bold"),
+            font=("DejaVu Sans", 28, "bold"),
             bg="#111111",
             fg="white",
-        ).pack(pady=(20, 15))
+        ).pack(pady=(15, 10))
 
         if show_name not in self.library["shows"]:
 
@@ -312,7 +315,7 @@ class TVBox:
 
             season_frame.pack(
                 expand=True,
-                pady=5,
+                pady=3,
             )
 
             seasons = list(
@@ -345,7 +348,7 @@ class TVBox:
                     row=row,
                     column=column,
                     padx=8,
-                    pady=5,
+                    pady=4,
                 )
 
             # Random episode
@@ -357,20 +360,20 @@ class TVBox:
                 lambda: self.random_show_episode(
                     show_name
                 ),
-            ).pack(pady=8)
+            ).pack(pady=6)
 
         tk.Button(
             self.root,
             text="← BACK",
             command=self.build_main_menu,
-            font=("DejaVu Sans", 16),
+            font=("DejaVu Sans", 14),
             bg="#222222",
             fg="white",
             relief="flat",
             cursor="hand2",
         ).pack(
             side="bottom",
-            pady=12,
+            pady=7,
         )
 
     # =========================
@@ -384,14 +387,19 @@ class TVBox:
             page=0,
         )
 
-    def show_episode_page(self, show_name, season, page=0):
+    def show_episode_page(
+        self,
+        show_name,
+        season,
+        page=0,
+    ):
         self.clear()
 
         self.set_background(show_name)
 
         episodes = self.library["shows"][show_name][season]
 
-        EPISODES_PER_PAGE = 28
+        EPISODES_PER_PAGE = 26
 
         start = page * EPISODES_PER_PAGE
         end = start + EPISODES_PER_PAGE
@@ -409,19 +417,23 @@ class TVBox:
         tk.Label(
             self.root,
             text=f"{show_name} — {season}",
-            font=("DejaVu Sans", 26, "bold"),
+            font=("DejaVu Sans", 24, "bold"),
             bg="#111111",
             fg="white",
-        ).pack(pady=(12, 5))
+        ).pack(
+            pady=(8, 3),
+        )
 
         if total_pages > 1:
             tk.Label(
                 self.root,
                 text=f"Page {page + 1} / {total_pages}",
-                font=("DejaVu Sans", 13),
+                font=("DejaVu Sans", 11),
                 bg="#111111",
                 fg="#AAAAAA",
-            ).pack(pady=(0, 5))
+            ).pack(
+                pady=(0, 2),
+            )
 
         # =========================
         # EPISODES
@@ -448,13 +460,13 @@ class TVBox:
             )
 
             button.config(
-                width=45,
+                width=48,
                 height=1,
-                font=("DejaVu Sans", 12, "bold"),
+                font=("DejaVu Sans", 10, "bold"),
             )
 
             button.pack(
-                pady=1,
+                pady=0,
             )
 
         # =========================
@@ -467,10 +479,11 @@ class TVBox:
         )
 
         navigation.pack(
-            pady=5,
+            pady=2,
         )
 
         if page > 0:
+
             tk.Button(
                 navigation,
                 text="← PREV",
@@ -479,7 +492,7 @@ class TVBox:
                     season,
                     page - 1,
                 ),
-                font=("DejaVu Sans", 13, "bold"),
+                font=("DejaVu Sans", 12, "bold"),
                 bg="#222222",
                 fg="white",
                 relief="flat",
@@ -492,6 +505,7 @@ class TVBox:
             )
 
         if page < total_pages - 1:
+
             tk.Button(
                 navigation,
                 text="NEXT →",
@@ -500,7 +514,7 @@ class TVBox:
                     season,
                     page + 1,
                 ),
-                font=("DejaVu Sans", 13, "bold"),
+                font=("DejaVu Sans", 12, "bold"),
                 bg="#222222",
                 fg="white",
                 relief="flat",
@@ -520,14 +534,14 @@ class TVBox:
             self.root,
             text="← BACK",
             command=lambda: self.show_show(show_name),
-            font=("DejaVu Sans", 14),
+            font=("DejaVu Sans", 13),
             bg="#222222",
             fg="white",
             relief="flat",
             cursor="hand2",
         ).pack(
             side="bottom",
-            pady=7,
+            pady=4,
         )
 
     # =========================
@@ -543,89 +557,19 @@ class TVBox:
         if not episodes:
             return
 
-        episode = random.choice(episodes)
+        self.root.withdraw()
 
-        self.show_random_result(
-            episode,
-            show_name,
+        audio_track = None
+
+        if show_name == "Alf":
+            audio_track = 2
+
+        play_random(
+            episodes,
+            audio_track=audio_track,
         )
 
-    def show_random_result(self, episode, show_name):
-        self.clear()
-
-        self.set_background(show_name)
-
-        tk.Label(
-            self.root,
-            text="🎲 RANDOM EPISODE",
-            font=("DejaVu Sans", 30, "bold"),
-            bg="#111111",
-            fg="white",
-        ).pack(pady=(40, 20))
-
-        tk.Label(
-            self.root,
-            text=show_name,
-            font=("DejaVu Sans", 20, "bold"),
-            bg="#111111",
-            fg="white",
-        ).pack()
-
-        tk.Label(
-            self.root,
-            text=episode.stem,
-            font=("DejaVu Sans", 22),
-            bg="#111111",
-            fg="white",
-            wraplength=900,
-        ).pack(pady=20)
-
-        button_frame = tk.Frame(
-            self.root,
-            bg="#111111",
-        )
-
-        button_frame.pack(pady=25)
-
-        # WATCH
-        self.make_button(
-            button_frame,
-            "▶ WATCH",
-            "#2E7D32",
-            "white",
-            lambda: self.play_episode(episode),
-        ).grid(
-            row=0,
-            column=0,
-            padx=10,
-        )
-
-        # REROLL
-        self.make_button(
-            button_frame,
-            "🎲 REROLL",
-            "#555555",
-            "white",
-            lambda: self.random_show_episode(show_name),
-        ).grid(
-            row=0,
-            column=1,
-            padx=10,
-        )
-
-        tk.Button(
-            self.root,
-            text="← BACK",
-            command=lambda: self.show_show(show_name),
-            font=("DejaVu Sans", 16),
-            bg="#222222",
-            fg="white",
-            relief="flat",
-            cursor="hand2",
-        ).pack(
-            side="bottom",
-            pady=20,
-        )
+        self.root.deiconify()
 
     # =========================
     # NORMAL EPISODE PLAYBACK
@@ -701,10 +645,12 @@ class TVBox:
         tk.Label(
             self.root,
             text="🎬 MOVIES",
-            font=("DejaVu Sans", 30, "bold"),
+            font=("DejaVu Sans", 28, "bold"),
             bg="#111111",
             fg="white",
-        ).pack(pady=30)
+        ).pack(
+            pady=20,
+        )
 
         if not self.library["movies"]:
 
@@ -727,21 +673,21 @@ class TVBox:
                     "white",
                     lambda m=movie: self.play_episode(m),
                 ).pack(
-                    pady=6,
+                    pady=5,
                 )
 
         tk.Button(
             self.root,
             text="← BACK",
             command=self.build_main_menu,
-            font=("DejaVu Sans", 16),
+            font=("DejaVu Sans", 14),
             bg="#222222",
             fg="white",
             relief="flat",
             cursor="hand2",
         ).pack(
             side="bottom",
-            pady=15,
+            pady=7,
         )
 
     # =========================
