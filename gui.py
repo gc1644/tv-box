@@ -378,17 +378,54 @@ class TVBox:
     # =========================
 
     def show_season(self, show_name, season):
+        self.show_episode_page(
+            show_name,
+            season,
+            page=0,
+        )
+
+    def show_episode_page(self, show_name, season, page=0):
         self.clear()
 
         self.set_background(show_name)
 
+        episodes = self.library["shows"][show_name][season]
+
+        EPISODES_PER_PAGE = 28
+
+        start = page * EPISODES_PER_PAGE
+        end = start + EPISODES_PER_PAGE
+
+        page_episodes = episodes[start:end]
+
+        total_pages = (
+            len(episodes) + EPISODES_PER_PAGE - 1
+        ) // EPISODES_PER_PAGE
+
+        # =========================
+        # TITLE
+        # =========================
+
         tk.Label(
             self.root,
             text=f"{show_name} — {season}",
-            font=("DejaVu Sans", 28, "bold"),
+            font=("DejaVu Sans", 26, "bold"),
             bg="#111111",
             fg="white",
-        ).pack(pady=25)
+        ).pack(pady=(12, 5))
+
+        if total_pages > 1:
+            tk.Label(
+                self.root,
+                text=f"Page {page + 1} / {total_pages}",
+                font=("DejaVu Sans", 13),
+                bg="#111111",
+                fg="#AAAAAA",
+            ).pack(pady=(0, 5))
+
+        # =========================
+        # EPISODES
+        # =========================
 
         episode_frame = tk.Frame(
             self.root,
@@ -397,32 +434,100 @@ class TVBox:
 
         episode_frame.pack(
             expand=True,
+            pady=2,
         )
 
-        for episode in self.library["shows"][show_name][season]:
+        for episode in page_episodes:
 
-            self.make_button(
+            button = self.make_button(
                 episode_frame,
                 episode.stem,
                 "#333333",
                 "white",
                 lambda e=episode: self.play_episode(e),
-            ).pack(
-                pady=6,
             )
+
+            button.config(
+                width=45,
+                height=1,
+                font=("DejaVu Sans", 12, "bold"),
+            )
+
+            button.pack(
+                pady=1,
+            )
+
+        # =========================
+        # PAGE NAVIGATION
+        # =========================
+
+        navigation = tk.Frame(
+            self.root,
+            bg="#111111",
+        )
+
+        navigation.pack(
+            pady=5,
+        )
+
+        if page > 0:
+            tk.Button(
+                navigation,
+                text="← PREV",
+                command=lambda: self.show_episode_page(
+                    show_name,
+                    season,
+                    page - 1,
+                ),
+                font=("DejaVu Sans", 13, "bold"),
+                bg="#222222",
+                fg="white",
+                relief="flat",
+                cursor="hand2",
+                width=10,
+            ).grid(
+                row=0,
+                column=0,
+                padx=5,
+            )
+
+        if page < total_pages - 1:
+            tk.Button(
+                navigation,
+                text="NEXT →",
+                command=lambda: self.show_episode_page(
+                    show_name,
+                    season,
+                    page + 1,
+                ),
+                font=("DejaVu Sans", 13, "bold"),
+                bg="#222222",
+                fg="white",
+                relief="flat",
+                cursor="hand2",
+                width=10,
+            ).grid(
+                row=0,
+                column=1,
+                padx=5,
+            )
+
+        # =========================
+        # BACK
+        # =========================
 
         tk.Button(
             self.root,
             text="← BACK",
             command=lambda: self.show_show(show_name),
-            font=("DejaVu Sans", 16),
+            font=("DejaVu Sans", 14),
             bg="#222222",
             fg="white",
             relief="flat",
             cursor="hand2",
         ).pack(
             side="bottom",
-            pady=15,
+            pady=7,
         )
 
     # =========================
