@@ -399,7 +399,7 @@ class TVBox:
 
         episodes = self.library["shows"][show_name][season]
 
-        EPISODES_PER_PAGE = 26
+        EPISODES_PER_PAGE = 10
 
         start = page * EPISODES_PER_PAGE
         end = start + EPISODES_PER_PAGE
