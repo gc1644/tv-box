@@ -1,10 +1,11 @@
 import tkinter as tk
+import random
 from pathlib import Path
 
 from PIL import Image, ImageTk
 
 from library import random_episode
-from player import play, play_playlist, play_random
+from player import play, play_playlist
 
 
 class TVBox:
@@ -32,6 +33,7 @@ class TVBox:
             "Alf": self.load_background("alf.jpeg"),
             "South Park": self.load_background("south-park.jpeg"),
             "SpongeBob": self.load_background("spongebob.jpeg"),
+            "Friends": self.load_background("friends.jpeg"),
         }
 
         self.background_image = None
@@ -114,13 +116,13 @@ class TVBox:
             parent,
             text=text,
             command=command,
-            font=("DejaVu Sans", 20, "bold"),
+            font=("DejaVu Sans", 18, "bold"),
             bg=bg,
             fg=fg,
             activebackground="#555555",
             activeforeground="white",
-            width=18,
-            height=3,
+            width=16,
+            height=2,
             relief="flat",
             cursor="hand2",
         )
@@ -132,24 +134,24 @@ class TVBox:
     def build_main_menu(self):
         self.clear()
 
-        self.root.configure(bg="#111111")
+        self.root.configure(bg="#151515")
 
         title = tk.Label(
             self.root,
             text="📺 TV BOX",
-            font=("DejaVu Sans", 32, "bold"),
-            bg="#111111",
+            font=("DejaVu Sans", 30, "bold"),
+            bg="#151515",
             fg="white",
         )
 
-        title.pack(pady=(30, 20))
+        title.pack(pady=(25, 15))
 
         button_frame = tk.Frame(
             self.root,
-            bg="#111111",
+            bg="#151515",
         )
 
-        button_frame.pack(expand=True)
+        button_frame.pack()
 
         # Simpsons
         self.make_button(
@@ -161,8 +163,8 @@ class TVBox:
         ).grid(
             row=0,
             column=0,
-            padx=15,
-            pady=10,
+            padx=8,
+            pady=5,
         )
 
         # Futurama
@@ -175,8 +177,8 @@ class TVBox:
         ).grid(
             row=0,
             column=1,
-            padx=15,
-            pady=10,
+            padx=8,
+            pady=5,
         )
 
         # Alf
@@ -189,8 +191,8 @@ class TVBox:
         ).grid(
             row=1,
             column=0,
-            padx=15,
-            pady=10,
+            padx=8,
+            pady=5,
         )
 
         # South Park
@@ -203,51 +205,75 @@ class TVBox:
         ).grid(
             row=1,
             column=1,
-            padx=15,
-            pady=10,
+            padx=8,
+            pady=5,
         )
 
         # SpongeBob
         self.make_button(
             button_frame,
             "SPONGEBOB",
-            "#E7C600",
-            "black",
+            "#F0806B",
+            "white",
             lambda: self.show_show("SpongeBob"),
         ).grid(
             row=2,
             column=0,
-            padx=15,
-            pady=10,
+            padx=8,
+            pady=5,
+        )
+
+        # Friends
+        self.make_button(
+            button_frame,
+            "FRIENDS",
+            "#6A4C93",
+            "white",
+            lambda: self.show_show("Friends"),
+        ).grid(
+            row=2,
+            column=1,
+            padx=8,
+            pady=5,
+        )
+
+        # =========================
+        # EXTRAS
+        # =========================
+
+        extras_frame = tk.Frame(
+            self.root,
+            bg="#151515",
+        )
+
+        extras_frame.pack(
+            pady=(16, 0),
         )
 
         # Movies
         self.make_button(
-            button_frame,
+            extras_frame,
             "🎬 MOVIES",
             "#333333",
             "white",
             self.show_movies,
         ).grid(
-            row=2,
-            column=1,
-            padx=15,
-            pady=10,
+            row=0,
+            column=0,
+            padx=8,
         )
 
         # Fireplace
         self.make_button(
-            button_frame,
+            extras_frame,
             "🔥 FIREPLACE",
             "#8B4513",
             "white",
             self.play_fireplace,
         ).grid(
-            row=3,
-            column=0,
-            columnspan=2,
-            padx=15,
-            pady=10,
+            row=0,
+            column=1,
+            padx=8,
         )
 
     # =========================
@@ -412,19 +438,89 @@ class TVBox:
         if not episodes:
             return
 
-        self.root.withdraw()
+        episode = random.choice(episodes)
 
-        audio_track = None
-
-        if show_name == "Alf":
-            audio_track = 2
-
-        play_random(
-            episodes,
-            audio_track=audio_track,
+        self.show_random_result(
+            episode,
+            show_name,
         )
 
-        self.root.deiconify()
+    def show_random_result(self, episode, show_name):
+        self.clear()
+
+        self.set_background(show_name)
+
+        tk.Label(
+            self.root,
+            text="🎲 RANDOM EPISODE",
+            font=("DejaVu Sans", 30, "bold"),
+            bg="#111111",
+            fg="white",
+        ).pack(pady=(40, 20))
+
+        tk.Label(
+            self.root,
+            text=show_name,
+            font=("DejaVu Sans", 20, "bold"),
+            bg="#111111",
+            fg="white",
+        ).pack()
+
+        tk.Label(
+            self.root,
+            text=episode.stem,
+            font=("DejaVu Sans", 22),
+            bg="#111111",
+            fg="white",
+            wraplength=900,
+        ).pack(pady=20)
+
+        button_frame = tk.Frame(
+            self.root,
+            bg="#111111",
+        )
+
+        button_frame.pack(pady=25)
+
+        # WATCH
+        self.make_button(
+            button_frame,
+            "▶ WATCH",
+            "#2E7D32",
+            "white",
+            lambda: self.play_episode(episode),
+        ).grid(
+            row=0,
+            column=0,
+            padx=10,
+        )
+
+        # REROLL
+        self.make_button(
+            button_frame,
+            "🎲 REROLL",
+            "#555555",
+            "white",
+            lambda: self.random_show_episode(show_name),
+        ).grid(
+            row=0,
+            column=1,
+            padx=10,
+        )
+
+        tk.Button(
+            self.root,
+            text="← BACK",
+            command=lambda: self.show_show(show_name),
+            font=("DejaVu Sans", 16),
+            bg="#222222",
+            fg="white",
+            relief="flat",
+            cursor="hand2",
+        ).pack(
+            side="bottom",
+            pady=20,
+        )
 
     # =========================
     # NORMAL EPISODE PLAYBACK
