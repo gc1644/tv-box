@@ -4,7 +4,7 @@ from pathlib import Path
 from PIL import Image, ImageTk
 
 from library import random_episode
-from player import play
+from player import play, play_playlist, play_random
 
 
 class TVBox:
@@ -51,6 +51,7 @@ class TVBox:
             return None
 
         image = Image.open(path)
+
         image = image.resize(
             (1280, 720),
             Image.Resampling.LANCZOS,
@@ -258,15 +259,13 @@ class TVBox:
 
         self.set_background(show_name)
 
-        title = tk.Label(
+        tk.Label(
             self.root,
             text=show_name,
             font=("DejaVu Sans", 32, "bold"),
             bg="#111111",
             fg="white",
-        )
-
-        title.pack(pady=(20, 15))
+        ).pack(pady=(20, 15))
 
         if show_name not in self.library["shows"]:
 
@@ -405,118 +404,89 @@ class TVBox:
     # =========================
 
     def random_show_episode(self, show_name):
-        episode = random_episode(
-            self.library,
-            show_name,
+        episodes = []
+
+        for season_episodes in self.library["shows"][show_name].values():
+            episodes.extend(season_episodes)
+
+        if not episodes:
+            return
+
+        self.root.withdraw()
+
+        audio_track = None
+
+        if show_name == "Alf":
+            audio_track = 2
+
+        play_random(
+            episodes,
+            audio_track=audio_track,
         )
 
-        if episode:
-            self.show_random_result(
-                episode,
-                show_name,
-            )
+        self.root.deiconify()
 
-    def show_random_result(self, episode, show_name):
-        self.clear()
+    # =========================
+    # NORMAL EPISODE PLAYBACK
+    # =========================
 
-        self.set_background(show_name)
+    def play_episode(self, episode):
+        show_name = None
 
-        tk.Label(
-            self.root,
-            text="🎲 RANDOM EPISODE",
-            font=("DejaVu Sans", 30, "bold"),
-            bg="#111111",
-            fg="white",
-        ).pack(pady=(50, 25))
+        # Find which show the episode belongs to
+        for name, seasons in self.library["shows"].items():
 
-        tk.Label(
-            self.root,
-            text=show_name,
-            font=("DejaVu Sans", 20, "bold"),
-            bg="#111111",
-            fg="#AAAAAA",
-        ).pack()
+            for season_episodes in seasons.values():
 
-        tk.Label(
-            self.root,
-            text=episode.stem,
-            font=("DejaVu Sans", 22),
-            bg="#111111",
-            fg="white",
-            wraplength=900,
-        ).pack(pady=20)
+                if episode in season_episodes:
+                    show_name = name
+                    break
 
-        button_frame = tk.Frame(
-            self.root,
-            bg="#111111",
+            if show_name:
+                break
+
+        # =========================
+        # MOVIE
+        # =========================
+
+        if show_name is None:
+
+            self.root.withdraw()
+
+            play(str(episode))
+
+            self.root.deiconify()
+
+            return
+
+        # =========================
+        # SHOW
+        # =========================
+
+        all_episodes = []
+
+        for season_episodes in self.library["shows"][show_name].values():
+            all_episodes.extend(season_episodes)
+
+        if not all_episodes:
+            return
+
+        start_index = all_episodes.index(episode)
+
+        audio_track = None
+
+        if show_name == "Alf":
+            audio_track = 2
+
+        self.root.withdraw()
+
+        play_playlist(
+            all_episodes,
+            start_index=start_index,
+            audio_track=audio_track,
         )
 
-        button_frame.pack(pady=30)
-
-        # WATCH
-        self.make_button(
-            button_frame,
-            "▶ WATCH",
-            "#2E7D32",
-            "white",
-            lambda: self.play_episode(episode),
-        ).grid(
-            row=0,
-            column=0,
-            padx=10,
-        )
-
-        # REROLL
-        self.make_button(
-            button_frame,
-            "🎲 REROLL",
-            "#555555",
-            "white",
-            lambda: self.reroll_episode(
-                episode,
-                show_name,
-            ),
-        ).grid(
-            row=0,
-            column=1,
-            padx=10,
-        )
-
-        tk.Button(
-            self.root,
-            text="← BACK",
-            command=lambda: self.show_show(show_name),
-            font=("DejaVu Sans", 16),
-            bg="#222222",
-            fg="white",
-            relief="flat",
-            cursor="hand2",
-        ).pack(
-            side="bottom",
-            pady=30,
-        )
-
-    def reroll_episode(self, current_episode, show_name):
-        new_episode = random_episode(
-            self.library,
-            show_name,
-        )
-
-        while (
-            new_episode == current_episode
-            and len(
-                self.library["shows"][show_name]
-            ) > 0
-        ):
-            new_episode = random_episode(
-                self.library,
-                show_name,
-            )
-
-        self.show_random_result(
-            new_episode,
-            show_name,
-        )
+        self.root.deiconify()
 
     # =========================
     # MOVIES
@@ -574,24 +544,8 @@ class TVBox:
         )
 
     # =========================
-    # PLAYER
+    # FIREPLACE
     # =========================
-
-    def play_episode(self, episode):
-        self.root.withdraw()
-
-        audio_track = None
-
-        # ALF uses audio track 2
-        if "Alf" in str(episode):
-            audio_track = 2
-
-        play(
-            str(episode),
-            audio_track=audio_track,
-        )
-
-        self.root.deiconify()
 
     def play_fireplace(self):
         if self.library["fireplace"]:
