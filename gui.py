@@ -309,7 +309,7 @@ class TVBox:
         tk.Label(
             self.root,
             text=show_name,
-            font=("DejaVu Sans", 18, "bold"),
+            font=("DejaVu Sans", 28, "bold"),
             bg="#111111",
             fg="white",
         ).pack(
@@ -371,6 +371,7 @@ class TVBox:
                     pady=4,
                 )
 
+            # Random episode
             self.make_button(
                 self.root,
                 "🎲 RANDOM EPISODE",
@@ -408,7 +409,7 @@ class TVBox:
 
         episodes = self.library["shows"][show_name][season]
 
-        # Maximum number of episodes visible
+        # Maximum 10 episodes per page
         EPISODES_PER_PAGE = 10
 
         start = page * EPISODES_PER_PAGE
@@ -427,11 +428,11 @@ class TVBox:
         tk.Label(
             self.root,
             text=f"{show_name} — {season}",
-            font=("DejaVu Sans", 18, "bold"),
+            font=("DejaVu Sans", 24, "bold"),
             bg="#111111",
             fg="white",
         ).pack(
-            pady=(12, 4),
+            pady=(10, 3),
         )
 
         if total_pages > 1:
@@ -439,11 +440,11 @@ class TVBox:
             tk.Label(
                 self.root,
                 text=f"Page {page + 1} / {total_pages}",
-                font=("DejaVu Sans", 11),
+                font=("DejaVu Sans", 10),
                 bg="#111111",
                 fg="#AAAAAA",
             ).pack(
-                pady=(0, 4),
+                pady=(0, 2),
             )
 
         # =========================
@@ -457,7 +458,7 @@ class TVBox:
 
         episode_frame.pack(
             expand=True,
-            pady=2,
+            pady=1,
         )
 
         for episode in page_episodes:
@@ -470,10 +471,11 @@ class TVBox:
                 lambda e=episode: self.play_episode(e),
             )
 
+            # Smaller episode buttons
             button.config(
-                width=48,
-                height=2,
-                font=("DejaVu Sans", 14, "bold"),
+                width=42,
+                height=1,
+                font=("DejaVu Sans", 12, "bold"),
             )
 
             button.pack(
@@ -490,7 +492,7 @@ class TVBox:
         )
 
         navigation.pack(
-            pady=4,
+            pady=3,
         )
 
         if page > 0:
@@ -503,7 +505,7 @@ class TVBox:
                     season,
                     page - 1,
                 ),
-                font=("DejaVu Sans", 12, "bold"),
+                font=("DejaVu Sans", 11, "bold"),
                 bg="#222222",
                 fg="white",
                 activebackground="#444444",
@@ -527,7 +529,7 @@ class TVBox:
                     season,
                     page + 1,
                 ),
-                font=("DejaVu Sans", 12, "bold"),
+                font=("DejaVu Sans", 11, "bold"),
                 bg="#222222",
                 fg="white",
                 activebackground="#444444",
