@@ -309,7 +309,7 @@ class TVBox:
         tk.Label(
             self.root,
             text=show_name,
-            font=("DejaVu Sans", 28, "bold"),
+            font=("DejaVu Sans", 18, "bold"),
             bg="#111111",
             fg="white",
         ).pack(
@@ -427,7 +427,7 @@ class TVBox:
         tk.Label(
             self.root,
             text=f"{show_name} — {season}",
-            font=("DejaVu Sans", 24, "bold"),
+            font=("DejaVu Sans", 18, "bold"),
             bg="#111111",
             fg="white",
         ).pack(
