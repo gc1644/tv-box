@@ -324,7 +324,9 @@ class TVBox:
                 font=("DejaVu Sans", 18),
                 bg="#111111",
                 fg="white",
-            ).pack(pady=20)
+            ).pack(
+                pady=20,
+            )
 
         else:
 
@@ -371,7 +373,6 @@ class TVBox:
                     pady=4,
                 )
 
-            # Random episode
             self.make_button(
                 self.root,
                 "🎲 RANDOM EPISODE",
@@ -380,7 +381,9 @@ class TVBox:
                 lambda: self.random_show_episode(
                     show_name
                 ),
-            ).pack(pady=6)
+            ).pack(
+                pady=6,
+            )
 
         self.make_back_button(
             self.build_main_menu
@@ -396,6 +399,10 @@ class TVBox:
             season,
             page=0,
         )
+
+    # =========================
+    # EPISODE PAGES
+    # =========================
 
     def show_episode_page(
         self,
@@ -432,7 +439,7 @@ class TVBox:
             bg="#111111",
             fg="white",
         ).pack(
-            pady=(10, 3),
+            pady=(10, 2),
         )
 
         if total_pages > 1:
@@ -448,41 +455,6 @@ class TVBox:
             )
 
         # =========================
-        # EPISODES
-        # =========================
-
-        episode_frame = tk.Frame(
-            self.root,
-            bg="#111111",
-        )
-
-        episode_frame.pack(
-            expand=True,
-            pady=1,
-        )
-
-        for episode in page_episodes:
-
-            button = self.make_button(
-                episode_frame,
-                episode.stem,
-                "#333333",
-                "white",
-                lambda e=episode: self.play_episode(e),
-            )
-
-            # Smaller episode buttons
-            button.config(
-                width=42,
-                height=1,
-                font=("DejaVu Sans", 12, "bold"),
-            )
-
-            button.pack(
-                pady=2,
-            )
-
-        # =========================
         # PAGE NAVIGATION
         # =========================
 
@@ -492,7 +464,7 @@ class TVBox:
         )
 
         navigation.pack(
-            pady=3,
+            pady=(2, 5),
         )
 
         if page > 0:
@@ -513,6 +485,7 @@ class TVBox:
                 relief="flat",
                 cursor="hand2",
                 width=10,
+                height=1,
             ).grid(
                 row=0,
                 column=0,
@@ -537,10 +510,45 @@ class TVBox:
                 relief="flat",
                 cursor="hand2",
                 width=10,
+                height=1,
             ).grid(
                 row=0,
                 column=1,
                 padx=5,
+            )
+
+        # =========================
+        # EPISODES
+        # =========================
+
+        episode_frame = tk.Frame(
+            self.root,
+            bg="#111111",
+        )
+
+        episode_frame.pack(
+            pady=2,
+        )
+
+        for episode in page_episodes:
+
+            button = self.make_button(
+                episode_frame,
+                episode.stem,
+                "#333333",
+                "white",
+                lambda e=episode: self.play_episode(e),
+            )
+
+            # Compact episode buttons
+            button.config(
+                width=42,
+                height=1,
+                font=("DejaVu Sans", 12, "bold"),
+            )
+
+            button.pack(
+                pady=2,
             )
 
         # =========================
@@ -585,7 +593,6 @@ class TVBox:
     def play_episode(self, episode):
         show_name = None
 
-        # Find which show owns the episode
         for name, seasons in self.library["shows"].items():
 
             for season_episodes in seasons.values():
