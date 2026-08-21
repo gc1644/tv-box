@@ -373,6 +373,7 @@ class TVBox:
                     pady=4,
                 )
 
+            # Random episode
             self.make_button(
                 self.root,
                 "🎲 RANDOM EPISODE",
@@ -416,7 +417,6 @@ class TVBox:
 
         episodes = self.library["shows"][show_name][season]
 
-        # Maximum 10 episodes per page
         EPISODES_PER_PAGE = 10
 
         start = page * EPISODES_PER_PAGE
@@ -540,7 +540,6 @@ class TVBox:
                 lambda e=episode: self.play_episode(e),
             )
 
-            # Compact episode buttons
             button.config(
                 width=42,
                 height=1,
@@ -550,10 +549,6 @@ class TVBox:
             button.pack(
                 pady=2,
             )
-
-        # =========================
-        # BACK
-        # =========================
 
         self.make_back_button(
             lambda: self.show_show(show_name)
@@ -652,9 +647,29 @@ class TVBox:
     # =========================
 
     def show_movies(self):
+        self.show_movie_page(page=0)
+
+    def show_movie_page(self, page=0):
         self.clear()
 
         self.root.configure(bg="#111111")
+
+        movies = self.library["movies"]
+
+        MOVIES_PER_PAGE = 10
+
+        start = page * MOVIES_PER_PAGE
+        end = start + MOVIES_PER_PAGE
+
+        page_movies = movies[start:end]
+
+        total_pages = (
+            len(movies) + MOVIES_PER_PAGE - 1
+        ) // MOVIES_PER_PAGE
+
+        # =========================
+        # TITLE
+        # =========================
 
         tk.Label(
             self.root,
@@ -663,36 +678,173 @@ class TVBox:
             bg="#111111",
             fg="white",
         ).pack(
-            pady=20,
+            pady=(15, 5),
         )
 
-        if not self.library["movies"]:
+        if total_pages > 1:
 
             tk.Label(
                 self.root,
+                text=f"Page {page + 1} / {total_pages}",
+                font=("DejaVu Sans", 10),
+                bg="#111111",
+                fg="#AAAAAA",
+            ).pack(
+                pady=(0, 3),
+            )
+
+        # =========================
+        # PAGE NAVIGATION
+        # =========================
+
+        navigation = tk.Frame(
+            self.root,
+            bg="#111111",
+        )
+
+        navigation.pack(
+            pady=(2, 4),
+        )
+
+        if page > 0:
+
+            tk.Button(
+                navigation,
+                text="← PREV",
+                command=lambda: self.show_movie_page(
+                    page - 1
+                ),
+                font=("DejaVu Sans", 11, "bold"),
+                bg="#222222",
+                fg="white",
+                activebackground="#444444",
+                activeforeground="white",
+                relief="flat",
+                cursor="hand2",
+                width=10,
+                height=1,
+            ).grid(
+                row=0,
+                column=0,
+                padx=5,
+            )
+
+        if page < total_pages - 1:
+
+            tk.Button(
+                navigation,
+                text="NEXT →",
+                command=lambda: self.show_movie_page(
+                    page + 1
+                ),
+                font=("DejaVu Sans", 11, "bold"),
+                bg="#222222",
+                fg="white",
+                activebackground="#444444",
+                activeforeground="white",
+                relief="flat",
+                cursor="hand2",
+                width=10,
+                height=1,
+            ).grid(
+                row=0,
+                column=1,
+                padx=5,
+            )
+
+        # =========================
+        # RANDOM MOVIE
+        # =========================
+
+        if movies:
+
+            tk.Button(
+                self.root,
+                text="🎲 RANDOM MOVIE",
+                command=self.play_random_movie,
+                font=("DejaVu Sans", 11, "bold"),
+                bg="#555555",
+                fg="white",
+                activebackground="#666666",
+                activeforeground="white",
+                relief="flat",
+                cursor="hand2",
+                width=18,
+                height=1,
+            ).pack(
+                pady=(2, 5),
+            )
+
+        # =========================
+        # MOVIE LIST
+        # =========================
+
+        movie_frame = tk.Frame(
+            self.root,
+            bg="#111111",
+        )
+
+        movie_frame.pack(
+            pady=2,
+        )
+
+        if not movies:
+
+            tk.Label(
+                movie_frame,
                 text="No movies found.",
-                font=("DejaVu Sans", 18),
+                font=("DejaVu Sans", 16),
                 bg="#111111",
                 fg="white",
-            ).pack()
+            ).pack(
+                pady=20,
+            )
 
         else:
 
-            for movie in self.library["movies"]:
+            for movie in page_movies:
 
-                self.make_button(
-                    self.root,
+                button = self.make_button(
+                    movie_frame,
                     movie.stem,
                     "#333333",
                     "white",
                     lambda m=movie: self.play_episode(m),
-                ).pack(
-                    pady=5,
                 )
+
+                button.config(
+                    width=42,
+                    height=1,
+                    font=("DejaVu Sans", 12, "bold"),
+                )
+
+                button.pack(
+                    pady=2,
+                )
+
+        # =========================
+        # BACK
+        # =========================
 
         self.make_back_button(
             self.build_main_menu
         )
+
+    # =========================
+    # RANDOM MOVIE
+    # =========================
+
+    def play_random_movie(self):
+        movies = self.library["movies"]
+
+        if not movies:
+            return
+
+        self.root.withdraw()
+
+        play_random(movies)
+
+        self.root.deiconify()
 
     # =========================
     # FIREPLACE
