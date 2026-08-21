@@ -248,7 +248,7 @@ class TVBox:
         self.make_button(
             button_frame,
             "FRIENDS",
-            "#6B4A3A",
+            "#666666",
             "white",
             lambda: self.show_show("Friends"),
         ).grid(
@@ -288,7 +288,7 @@ class TVBox:
         self.make_button(
             extras_frame,
             "🔥 FIREPLACE",
-            "#8B4513",
+            "#C62828",
             "white",
             self.play_fireplace,
         ).grid(
