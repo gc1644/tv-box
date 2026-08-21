@@ -2,6 +2,8 @@
 
 A simple, mouse-friendly TV interface for Linux. Built with Python and plays media via MPV
 
+![Photo](screenshots/irl.jpeg)
+
 ## Screenshots
 
 ![Main menu](screenshots/main-menu.png)
