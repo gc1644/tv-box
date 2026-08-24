@@ -667,7 +667,7 @@ class TVBox:
 
         title = tk.Label(
             self.root,
-            text="TV BOX",
+            text="📺 TV BOX",
             font=(
                 "DejaVu Sans",
                 30,
