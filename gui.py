@@ -1,5 +1,6 @@
 import tkinter as tk
 from pathlib import Path
+import random
 
 from PIL import Image, ImageTk
 
@@ -428,10 +429,6 @@ class TVBox:
             len(episodes) + EPISODES_PER_PAGE - 1
         ) // EPISODES_PER_PAGE
 
-        # =========================
-        # TITLE
-        # =========================
-
         tk.Label(
             self.root,
             text=f"{show_name} — {season}",
@@ -567,15 +564,202 @@ class TVBox:
         if not episodes:
             return
 
-        self.root.withdraw()
+        self.show_random_episode(
+            show_name,
+            episodes,
+        )
+
+    def show_random_episode(self, show_name, episodes):
+        self.clear()
+
+        self.set_background(show_name)
+
+        episode = random.choice(episodes)
+
+        self.random_episodes = episodes
+        self.random_episode = episode
+        self.random_show_name = show_name
+
+        # =========================
+        # TITLE
+        # =========================
+
+        tk.Label(
+            self.root,
+            text="🎲 RANDOM EPISODE",
+            font=("DejaVu Sans", 28, "bold"),
+            bg="#111111",
+            fg="white",
+        ).pack(
+            pady=(80, 20),
+        )
+
+        # =========================
+        # SELECTED EPISODE
+        # =========================
+
+        tk.Label(
+            self.root,
+            text=episode.stem,
+            font=("DejaVu Sans", 22, "bold"),
+            bg="#333333",
+            fg="white",
+            padx=30,
+            pady=20,
+        ).pack(
+            pady=20,
+        )
+
+        # =========================
+        # REROLL
+        # =========================
+
+        tk.Button(
+            self.root,
+            text="🎲 REROLL",
+            command=lambda: self.reroll_episode(
+                show_name,
+                episodes,
+            ),
+            font=("DejaVu Sans", 16, "bold"),
+            bg="#555555",
+            fg="white",
+            activebackground="#666666",
+            activeforeground="white",
+            relief="flat",
+            cursor="hand2",
+            width=16,
+            height=2,
+        ).pack(
+            pady=8,
+        )
+
+        # =========================
+        # PLAY
+        # =========================
+
+        tk.Button(
+            self.root,
+            text="▶ PLAY",
+            command=lambda: self.play_random_selected(
+                episode,
+                show_name,
+            ),
+            font=("DejaVu Sans", 16, "bold"),
+            bg="#356B3D",
+            fg="white",
+            activebackground="#467C4D",
+            activeforeground="white",
+            relief="flat",
+            cursor="hand2",
+            width=16,
+            height=2,
+        ).pack(
+            pady=8,
+        )
+
+        self.make_back_button(
+            lambda: self.show_show(show_name)
+        )
+
+    def reroll_episode(self, show_name, episodes):
+        self.clear()
+
+        self.set_background(show_name)
+
+        episode = random.choice(episodes)
+
+        self.random_episodes = episodes
+        self.random_episode = episode
+        self.random_show_name = show_name
+
+        tk.Label(
+            self.root,
+            text="🎲 RANDOM EPISODE",
+            font=("DejaVu Sans", 28, "bold"),
+            bg="#111111",
+            fg="white",
+        ).pack(
+            pady=(80, 20),
+        )
+
+        tk.Label(
+            self.root,
+            text=episode.stem,
+            font=("DejaVu Sans", 22, "bold"),
+            bg="#333333",
+            fg="white",
+            padx=30,
+            pady=20,
+        ).pack(
+            pady=20,
+        )
+
+        tk.Button(
+            self.root,
+            text="🎲 REROLL",
+            command=lambda: self.reroll_episode(
+                show_name,
+                episodes,
+            ),
+            font=("DejaVu Sans", 16, "bold"),
+            bg="#555555",
+            fg="white",
+            activebackground="#666666",
+            activeforeground="white",
+            relief="flat",
+            cursor="hand2",
+            width=16,
+            height=2,
+        ).pack(
+            pady=8,
+        )
+
+        tk.Button(
+            self.root,
+            text="▶ PLAY",
+            command=lambda: self.play_random_selected(
+                episode,
+                show_name,
+            ),
+            font=("DejaVu Sans", 16, "bold"),
+            bg="#356B3D",
+            fg="white",
+            activebackground="#467C4D",
+            activeforeground="white",
+            relief="flat",
+            cursor="hand2",
+            width=16,
+            height=2,
+        ).pack(
+            pady=8,
+        )
+
+        self.make_back_button(
+            lambda: self.show_show(show_name)
+        )
+
+    def play_random_selected(self, episode, show_name):
+        all_episodes = []
+
+        for season_episodes in self.library["shows"][show_name].values():
+            all_episodes.extend(season_episodes)
+
+        if not all_episodes:
+            return
+
+        start_index = all_episodes.index(episode)
 
         audio_track = None
 
         if show_name == "Alf":
             audio_track = 2
 
-        play_random(
-            episodes,
+        self.root.withdraw()
+
+        play_playlist(
+            all_episodes,
+            start_index=start_index,
             audio_track=audio_track,
         )
 
@@ -666,10 +850,6 @@ class TVBox:
         total_pages = (
             len(movies) + MOVIES_PER_PAGE - 1
         ) // MOVIES_PER_PAGE
-
-        # =========================
-        # TITLE
-        # =========================
 
         tk.Label(
             self.root,
@@ -822,10 +1002,6 @@ class TVBox:
                     pady=2,
                 )
 
-        # =========================
-        # BACK
-        # =========================
-
         self.make_back_button(
             self.build_main_menu
         )
@@ -840,9 +1016,86 @@ class TVBox:
         if not movies:
             return
 
+        self.show_random_movie(movies)
+
+
+    def show_random_movie(self, movies):
+        self.clear()
+
+        self.root.configure(bg="#111111")
+
+        movie = random.choice(movies)
+
+        self.random_movie = movie
+        self.random_movies = movies
+
+        tk.Label(
+            self.root,
+            text="🎲 RANDOM MOVIE",
+            font=("DejaVu Sans", 28, "bold"),
+            bg="#111111",
+            fg="white",
+        ).pack(
+            pady=(80, 20),
+        )
+
+        tk.Label(
+            self.root,
+            text=movie.stem,
+            font=("DejaVu Sans", 22, "bold"),
+            bg="#333333",
+            fg="white",
+            padx=30,
+            pady=20,
+        ).pack(
+            pady=20,
+        )
+
+        # REROLL
+        tk.Button(
+            self.root,
+            text="🎲 REROLL",
+            command=lambda: self.show_random_movie(movies),
+            font=("DejaVu Sans", 16, "bold"),
+            bg="#555555",
+            fg="white",
+            activebackground="#666666",
+            activeforeground="white",
+            relief="flat",
+            cursor="hand2",
+            width=16,
+            height=2,
+        ).pack(
+            pady=8,
+        )
+
+        # PLAY
+        tk.Button(
+            self.root,
+            text="▶ PLAY",
+            command=lambda: self.play_selected_movie(movie),
+            font=("DejaVu Sans", 16, "bold"),
+            bg="#356B3D",
+            fg="white",
+            activebackground="#467C4D",
+            activeforeground="white",
+            relief="flat",
+            cursor="hand2",
+            width=16,
+            height=2,
+        ).pack(
+            pady=8,
+        )
+
+        self.make_back_button(
+            self.show_movies
+        )
+
+
+    def play_selected_movie(self, movie):
         self.root.withdraw()
 
-        play_random(movies)
+        play(str(movie))
 
         self.root.deiconify()
 
