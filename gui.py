@@ -2,6 +2,8 @@ import tkinter as tk
 from pathlib import Path
 from datetime import date
 import random
+import time
+import subprocess
 
 from PIL import Image, ImageTk
 
@@ -17,17 +19,25 @@ class TVBox:
         self.root = tk.Tk()
         self.root.title("TV BOX")
         self.root.geometry("1280x720")
-        self.root.configure(bg="#151515")
+        self.root.configure(bg="#111111")
 
-        # =========================
-        # MEDIA DIRECTORY
-        # =========================
+        # ==========================================
+        # SLEEP TIMER
+        # ==========================================
+
+        self.sleep_timer_job = None
+        self.sleep_deadline = None
+        self.sleep_button = None
+
+        # ==========================================
+        # MEDIA
+        # ==========================================
 
         self.media_dir = Path.home() / "Videos"
 
-        # =========================
+        # ==========================================
         # BACKGROUNDS
-        # =========================
+        # ==========================================
 
         self.background_dir = (
             Path(__file__).parent
@@ -56,18 +66,15 @@ class TVBox:
         self.background_image = None
         self.background_label = None
 
-        # =========================
-        # EVENT ANIMATION
-        # =========================
-
+        # Animated event background
         self.event_background = None
         self.event_frames = []
         self.event_frame_index = 0
         self.event_animation_job = None
 
-        # =========================
+        # ==========================================
         # PAGE MEMORY
-        # =========================
+        # ==========================================
 
         self.page_memory = {
             "movies": 0,
@@ -77,18 +84,110 @@ class TVBox:
 
         self.build_main_menu()
 
-    # ==================================================
+    # ==============================================
+    # SLEEP TIMER
+    # ==============================================
+
+    def toggle_sleep_timer(self):
+
+        if self.sleep_timer_job is not None:
+            self.cancel_sleep_timer()
+
+        else:
+            self.sleep_deadline = (
+                time.time() + 3600
+            )
+
+            self.update_sleep_button()
+
+    def update_sleep_button(self):
+
+        if self.sleep_deadline is None:
+            return
+
+        remaining = int(
+            self.sleep_deadline - time.time()
+        )
+
+        if remaining <= 0:
+
+            self.sleep_timer_job = None
+            self.sleep_deadline = None
+
+            self.suspend_system()
+
+            return
+
+        minutes = remaining // 60
+        seconds = remaining % 60
+
+        if self.sleep_button is not None:
+            try:
+                self.sleep_button.config(
+                    text=f"SLEEP {minutes:02d}:{seconds:02d}",
+                    bg="#8B0000",
+                    fg="white",
+                )
+            except tk.TclError:
+                self.sleep_button = None
+
+        self.sleep_timer_job = self.root.after(
+            1000,
+            self.update_sleep_button,
+        )
+
+    def cancel_sleep_timer(self):
+
+        if self.sleep_timer_job is not None:
+
+            try:
+                self.root.after_cancel(
+                    self.sleep_timer_job
+                )
+            except tk.TclError:
+                pass
+
+        self.sleep_timer_job = None
+        self.sleep_deadline = None
+
+        if self.sleep_button is not None:
+
+            try:
+                self.sleep_button.config(
+                    text="SLEEP 1H",
+                    bg="#222222",
+                    fg="white",
+                )
+            except tk.TclError:
+                self.sleep_button = None
+
+    def suspend_system(self):
+
+        self.sleep_timer_job = None
+        self.sleep_deadline = None
+
+        self.sleep_button = None
+
+        self.root.withdraw()
+
+        subprocess.run(
+            ["systemctl", "suspend"]
+        )
+
+    # ==============================================
     # BACKGROUNDS
-    # ==================================================
+    # ==============================================
 
     def load_background(self, filename):
 
         path = self.background_dir / filename
 
         if not path.exists():
+
             print(
                 f"Background not found: {path}"
             )
+
             return None
 
         image = Image.open(path)
@@ -123,9 +222,11 @@ class TVBox:
         path = self.background_dir / filename
 
         if not path.exists():
+
             print(
                 f"Event background not found: {path}"
             )
+
             return False
 
         try:
@@ -133,7 +234,11 @@ class TVBox:
             image = Image.open(path)
 
             # Animated GIF
-            if getattr(image, "n_frames", 1) > 1:
+            if getattr(
+                image,
+                "n_frames",
+                1,
+            ) > 1:
 
                 self.event_frames = []
 
@@ -141,7 +246,9 @@ class TVBox:
                     image.n_frames
                 ):
 
-                    image.seek(frame_number)
+                    image.seek(
+                        frame_number
+                    )
 
                     frame = image.convert(
                         "RGB"
@@ -275,7 +382,9 @@ class TVBox:
 
             return
 
-        image = self.backgrounds[show_name]
+        image = self.backgrounds[
+            show_name
+        ]
 
         if image is None:
 
@@ -302,9 +411,9 @@ class TVBox:
 
         self.background_label.lower()
 
-    # ==================================================
-    # GENERAL
-    # ==================================================
+    # ==============================================
+    # GENERAL UI
+    # ==============================================
 
     def clear(self):
 
@@ -315,6 +424,10 @@ class TVBox:
 
         self.background_label = None
         self.background_image = None
+
+        # The button was destroyed.
+        # The timer itself continues running.
+        self.sleep_button = None
 
     def make_button(
         self,
@@ -396,13 +509,80 @@ class TVBox:
             anchor="ne",
         )
 
-    # ==================================================
-    # EVENT DATES
-    # ==================================================
+    # ==============================================
+    # SLEEP BUTTON
+    # ==============================================
+
+    def make_sleep_button(self):
+
+        if self.sleep_deadline is not None:
+
+            remaining = int(
+                self.sleep_deadline
+                - time.time()
+            )
+
+            if remaining > 0:
+
+                minutes = remaining // 60
+                seconds = remaining % 60
+
+                text = (
+                    f"SLEEP "
+                    f"{minutes:02d}:"
+                    f"{seconds:02d}"
+                )
+
+                bg = "#8B0000"
+
+            else:
+
+                text = "SLEEP 1H"
+                bg = "#222222"
+
+        else:
+
+            text = "SLEEP 1H"
+            bg = "#222222"
+
+        self.sleep_button = tk.Button(
+            self.root,
+            text=text,
+            command=self.toggle_sleep_timer,
+            font=(
+                "DejaVu Sans",
+                11,
+                "bold",
+            ),
+            bg=bg,
+            fg="white",
+            activebackground="#444444",
+            activeforeground="white",
+            relief="flat",
+            cursor="hand2",
+            width=11,
+        )
+
+        self.sleep_button.place(
+            relx=0.02,
+            rely=0.02,
+            anchor="nw",
+        )
+
+    # ==============================================
+    # EVENTS
+    # ==============================================
 
     def get_current_event(self):
 
         today = date.today()
+
+        # Testing date:
+        # today = date(
+        #       2026,
+        #       12,
+        #       31,
+        #    )
 
         # Halloween:
         # October 30 - November 1
@@ -453,7 +633,7 @@ class TVBox:
             return "#6A1B9A"
 
         if event == "christmas":
-            return "#B71C1C"
+            return "white"
 
         return "#666666"
 
@@ -463,194 +643,331 @@ class TVBox:
 
         if event:
             self.show_event_screen(event)
+
         else:
             self.show_random_normal()
 
-    # ==================================================
+    # ==============================================
     # MAIN MENU
-    # ==================================================
+    # ==============================================
 
     def build_main_menu(self):
 
         self.clear()
 
         self.root.configure(
-            bg="#151515"
+            bg="#111111"
         )
+
+        self.make_sleep_button()
+
+        # ------------------------------------------
+        # Title
+        # ------------------------------------------
 
         title = tk.Label(
             self.root,
-            text="📺 TV BOX",
+            text="TV BOX",
             font=(
                 "DejaVu Sans",
                 30,
                 "bold",
             ),
-            bg="#151515",
+            bg="#111111",
             fg="white",
         )
 
         title.pack(
-            pady=(25, 15)
+            pady=(28, 2)
         )
 
-        button_frame = tk.Frame(
+        subtitle = tk.Label(
             self.root,
-            bg="#151515",
+            text="WHAT DO YOU WANT TO WATCH?",
+            font=(
+                "DejaVu Sans",
+                11,
+                "bold",
+            ),
+            bg="#111111",
+            fg="#777777",
         )
 
-        button_frame.pack()
+        subtitle.pack(
+            pady=(0, 18)
+        )
 
-        # Simpsons
+        # ------------------------------------------
+        # Show grid
+        # ------------------------------------------
 
-        self.make_button(
-            button_frame,
+        show_frame = tk.Frame(
+            self.root,
+            bg="#111111",
+        )
+
+        show_frame.pack()
+
+        def show_card(
+            text,
+            color,
+            command,
+            row,
+            column,
+            fg="white",
+        ):
+
+            card = tk.Frame(
+                show_frame,
+                bg="#111111",
+            )
+
+            card.grid(
+                row=row,
+                column=column,
+                padx=7,
+                pady=7,
+            )
+
+            button = tk.Button(
+                card,
+                text=text,
+                command=command,
+                font=(
+                    "DejaVu Sans",
+                    17,
+                    "bold",
+                ),
+                bg=color,
+                fg=fg,
+                activebackground=color,
+                activeforeground=fg,
+                relief="flat",
+                bd=0,
+                width=16,
+                height=2,
+                cursor="hand2",
+            )
+
+            button.pack()
+
+            tk.Frame(
+                card,
+                bg=color,
+                height=3,
+            ).pack(
+                fill="x",
+                pady=(3, 0),
+            )
+
+        # ------------------------------------------
+        # Shows
+        # ------------------------------------------
+
+        show_card(
             "SIMPSONS",
             "#F5C518",
-            "black",
             lambda:
                 self.show_show("Simpsons"),
-        ).grid(
-            row=0,
-            column=0,
-            padx=8,
-            pady=5,
+            0,
+            0,
+            "black",
         )
 
-        # Futurama
-
-        self.make_button(
-            button_frame,
+        show_card(
             "FUTURAMA",
             "#245A9C",
-            "white",
             lambda:
                 self.show_show("Futurama"),
-        ).grid(
-            row=0,
-            column=1,
-            padx=8,
-            pady=5,
+            0,
+            1,
         )
 
-        # Alf
-
-        self.make_button(
-            button_frame,
+        show_card(
             "ALF",
             "#A0522D",
-            "white",
             lambda:
                 self.show_show("Alf"),
-        ).grid(
-            row=1,
-            column=0,
-            padx=8,
-            pady=5,
+            1,
+            0,
         )
 
-        # South Park
-
-        self.make_button(
-            button_frame,
+        show_card(
             "SOUTH PARK",
             "#356B3D",
-            "white",
             lambda:
                 self.show_show("South Park"),
-        ).grid(
-            row=1,
-            column=1,
-            padx=8,
-            pady=5,
+            1,
+            1,
         )
 
-        # SpongeBob
-
-        self.make_button(
-            button_frame,
+        show_card(
             "SPONGEBOB",
             "#F0806B",
-            "white",
             lambda:
                 self.show_show("SpongeBob"),
-        ).grid(
-            row=2,
-            column=0,
-            padx=8,
-            pady=5,
+            2,
+            0,
         )
 
-        # Mystery / Event
+        # ------------------------------------------
+        # Mystery button
+        # ------------------------------------------
 
-        self.make_button(
-            button_frame,
-            self.get_event_button_text(),
-            self.get_event_button_color(),
-            "white",
-            self.handle_event_button,
-        ).grid(
+        mystery_color = (
+            self.get_event_button_color()
+        )
+
+        mystery_text = (
+            self.get_event_button_text()
+        )
+
+        mystery = tk.Frame(
+            show_frame,
+            bg="#111111",
+        )
+
+        mystery.grid(
             row=2,
             column=1,
-            padx=8,
-            pady=5,
+            padx=7,
+            pady=7,
         )
 
-        # Extras
+        mystery_button = tk.Button(
+            mystery,
+            text=mystery_text,
+            command=self.handle_event_button,
+            font=(
+                "DejaVu Sans",
+                17,
+                "bold",
+            ),
+            bg=mystery_color,
+            fg=(
+                "#B71C1C"
+                if self.get_current_event()
+                == "christmas"
+                else "white"
+            ),
+            activebackground=mystery_color,
+            activeforeground="white",
+            relief="flat",
+            bd=0,
+            width=16,
+            height=2,
+            cursor="hand2",
+        )
 
-        extras_frame = tk.Frame(
+        mystery_button.pack()
+
+        tk.Frame(
+            mystery,
+            bg=mystery_color,
+            height=3,
+        ).pack(
+            fill="x",
+            pady=(3, 0),
+        )
+
+        # ------------------------------------------
+        # Separator
+        # ------------------------------------------
+
+        tk.Frame(
             self.root,
-            bg="#151515",
+            bg="#333333",
+            height=2,
+            width=650,
+        ).pack(
+            pady=(14, 12),
         )
 
-        extras_frame.pack(
-            pady=(16, 0)
+        # ------------------------------------------
+        # Utilities
+        # ------------------------------------------
+
+        utility_frame = tk.Frame(
+            self.root,
+            bg="#111111",
         )
 
-        # Movies
+        utility_frame.pack()
 
-        self.make_button(
-            extras_frame,
-            "🎬 MOVIES",
-            "#333333",
-            "white",
-            self.show_movies,
-        ).grid(
+        movies_button = tk.Button(
+            utility_frame,
+            text="🎬  MOVIES",
+            command=self.show_movies,
+            font=(
+                "DejaVu Sans",
+                15,
+                "bold",
+            ),
+            bg="#292929",
+            fg="white",
+            activebackground="#444444",
+            activeforeground="white",
+            relief="flat",
+            bd=0,
+            width=18,
+            height=2,
+            cursor="hand2",
+        )
+
+        movies_button.grid(
             row=0,
             column=0,
-            padx=8,
+            padx=7,
         )
 
-        # Fireplace
+        fireplace_button = tk.Button(
+            utility_frame,
+            text="🔥  FIREPLACE",
+            command=self.play_fireplace,
+            font=(
+                "DejaVu Sans",
+                15,
+                "bold",
+            ),
+            bg="#C62828",
+            fg="white",
+            activebackground="#E53935",
+            activeforeground="white",
+            relief="flat",
+            bd=0,
+            width=18,
+            height=2,
+            cursor="hand2",
+        )
 
-        self.make_button(
-            extras_frame,
-            "🔥 FIREPLACE",
-            "#C62828",
-            "white",
-            self.play_fireplace,
-        ).grid(
+        fireplace_button.grid(
             row=0,
             column=1,
-            padx=8,
+            padx=7,
         )
 
-    # ==================================================
+        # ------------------------------------------
+        # Footer
+        # ------------------------------------------
+
+        tk.Label(
+            self.root,
+            text="© 2026",
+            font=(
+                "DejaVu Sans",
+                9,
+            ),
+            bg="#111111",
+            fg="#555555",
+        ).pack(
+            pady=(12, 0),
+        )
+
+    # ==============================================
     # UNIVERSAL RANDOM
-    # ==================================================
+    # ==============================================
 
     def get_all_media(self):
-
-        """
-        Scan EVERYTHING under ~/Videos.
-
-        This is deliberately separate from the
-        normal library structure.
-
-        The ? button doesn't care whether something
-        is a movie, episode, Halloween file,
-        Christmas file, or something in a nested folder.
-        """
 
         return scan_all_media(
             self.media_dir
@@ -663,7 +980,9 @@ class TVBox:
         if not media:
             return
 
-        selected = random.choice(media)
+        selected = random.choice(
+            media
+        )
 
         self.clear()
 
@@ -701,8 +1020,6 @@ class TVBox:
             pady=20
         )
 
-        # Reroll
-
         self.make_small_button(
             self.root,
             "🎲 REROLL",
@@ -712,8 +1029,6 @@ class TVBox:
         ).pack(
             pady=5
         )
-
-        # Play
 
         self.make_small_button(
             self.root,
@@ -742,9 +1057,9 @@ class TVBox:
 
         self.root.deiconify()
 
-    # ==================================================
-    # SHOW MENU
-    # ==================================================
+    # ==============================================
+    # SHOWS
+    # ==============================================
 
     def show_show(self, show_name):
 
@@ -860,9 +1175,9 @@ class TVBox:
             self.build_main_menu
         )
 
-    # ==================================================
-    # EPISODE PAGES
-    # ==================================================
+    # ==============================================
+    # EPISODES
+    # ==============================================
 
     def show_season(
         self,
@@ -1080,9 +1395,9 @@ class TVBox:
                 )
         )
 
-    # ==================================================
+    # ==============================================
     # RANDOM EPISODE
-    # ==================================================
+    # ==============================================
 
     def random_show_episode(
         self,
@@ -1232,9 +1547,9 @@ class TVBox:
 
         self.root.deiconify()
 
-    # ==================================================
-    # NORMAL PLAYBACK
-    # ==================================================
+    # ==============================================
+    # PLAY EPISODE / MOVIE
+    # ==============================================
 
     def play_episode(
         self,
@@ -1260,8 +1575,6 @@ class TVBox:
             if show_name:
                 break
 
-        # Movie / arbitrary video
-
         if show_name is None:
 
             self.root.withdraw()
@@ -1273,8 +1586,6 @@ class TVBox:
             self.root.deiconify()
 
             return
-
-        # Show
 
         all_episodes = []
 
@@ -1312,9 +1623,9 @@ class TVBox:
 
         self.root.deiconify()
 
-    # ==================================================
+    # ==============================================
     # MOVIES
-    # ==================================================
+    # ==============================================
 
     def show_movies(self):
 
@@ -1514,9 +1825,9 @@ class TVBox:
             self.build_main_menu
         )
 
-    # ==================================================
+    # ==============================================
     # RANDOM MOVIE
-    # ==================================================
+    # ==============================================
 
     def play_random_movie(self):
 
@@ -1619,9 +1930,9 @@ class TVBox:
 
         self.root.deiconify()
 
-    # ==================================================
+    # ==============================================
     # EVENT FILES
-    # ==================================================
+    # ==============================================
 
     def get_event_files(
         self,
@@ -1663,9 +1974,9 @@ class TVBox:
                 path.name.lower(),
         )
 
-    # ==================================================
+    # ==============================================
     # EVENT RANDOM SCREEN
-    # ==================================================
+    # ==============================================
 
     def show_event_screen(
         self,
@@ -1773,9 +2084,7 @@ class TVBox:
 
             tk.Label(
                 self.root,
-                text=(
-                    "No files found."
-                ),
+                text="No files found.",
                 font=(
                     "DejaVu Sans",
                     16,
@@ -1891,9 +2200,9 @@ class TVBox:
 
         self.root.deiconify()
 
-    # ==================================================
+    # ==============================================
     # EVENT BROWSE
-    # ==================================================
+    # ==============================================
 
     def show_event_browse(
         self,
@@ -1918,17 +2227,11 @@ class TVBox:
                 "halloween.gif"
             )
 
-            title = (
-                "🎃 HALLOWEEN"
-            )
+            title = "🎃 HALLOWEEN"
 
-            fallback_bg = (
-                "#180B20"
-            )
+            fallback_bg = "#180B20"
 
-            title_color = (
-                "#FF8C00"
-            )
+            title_color = "#FF8C00"
 
         else:
 
@@ -1936,17 +2239,11 @@ class TVBox:
                 "christmas.gif"
             )
 
-            title = (
-                "🎄 CHRISTMAS"
-            )
+            title = "🎄 CHRISTMAS"
 
-            fallback_bg = (
-                "#102018"
-            )
+            fallback_bg = "#102018"
 
-            title_color = (
-                "#E53935"
-            )
+            title_color = "#E53935"
 
         self.root.configure(
             bg=fallback_bg
@@ -2128,9 +2425,9 @@ class TVBox:
                 )
         )
 
-    # ==================================================
+    # ==============================================
     # FIREPLACE
-    # ==================================================
+    # ==============================================
 
     def play_fireplace(self):
 
@@ -2149,9 +2446,9 @@ class TVBox:
 
             self.root.deiconify()
 
-    # ==================================================
+    # ==============================================
     # RUN
-    # ==================================================
+    # ==============================================
 
     def run(self):
 
