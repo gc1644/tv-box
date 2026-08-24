@@ -1777,24 +1777,32 @@ class TVBox:
 
         if movies:
 
-            self.make_small_button(
+            random_movie_button = self.make_small_button(
                 self.root,
                 "🎲 RANDOM MOVIE",
                 "#555555",
                 "white",
                 self.play_random_movie,
-            ).pack(
+            )
+
+            random_movie_button.config(
+                font=("DejaVu Sans", 13, "bold"),
+                width=16,
+                height=2,
+            )
+
+            random_movie_button.pack(
                 pady=(2, 5)
             )
 
-        movie_frame = tk.Frame(
-            self.root,
-            bg="#111111",
-        )
+            movie_frame = tk.Frame(
+                self.root,
+                bg="#111111",
+            )
 
-        movie_frame.pack(
-            pady=2
-        )
+            movie_frame.pack(
+                pady=2
+            )
 
         for movie in page_movies:
 
