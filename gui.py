@@ -1,10 +1,11 @@
 import tkinter as tk
 from pathlib import Path
+from datetime import date
 import random
 
 from PIL import Image, ImageTk
 
-from player import play, play_playlist, play_random
+from player import play, play_playlist
 
 
 class TVBox:
@@ -17,8 +18,10 @@ class TVBox:
         self.root.configure(bg="#151515")
 
         # =========================
-        # BACKGROUNDS
+        # DIRECTORIES
         # =========================
+
+        self.media_dir = Path.home() / "Videos"
 
         self.background_dir = (
             Path(__file__).parent
@@ -26,17 +29,29 @@ class TVBox:
             / "backgrounds"
         )
 
+        # =========================
+        # NORMAL BACKGROUNDS
+        # =========================
+
         self.backgrounds = {
             "Simpsons": self.load_background("simpsons.jpeg"),
             "Futurama": self.load_background("futurama.jpeg"),
             "Alf": self.load_background("alf.jpeg"),
             "South Park": self.load_background("south-park.jpeg"),
             "SpongeBob": self.load_background("spongebob.jpeg"),
-            "Friends": self.load_background("friends.jpeg"),
         }
 
         self.background_image = None
         self.background_label = None
+
+        # =========================
+        # EVENT ANIMATION
+        # =========================
+
+        self.event_background = None
+        self.event_frames = []
+        self.event_frame_index = 0
+        self.event_animation_job = None
 
         self.build_main_menu()
 
@@ -60,7 +75,149 @@ class TVBox:
 
         return ImageTk.PhotoImage(image)
 
+    def stop_event_animation(self):
+        if self.event_animation_job is not None:
+            try:
+                self.root.after_cancel(
+                    self.event_animation_job
+                )
+            except tk.TclError:
+                pass
+
+            self.event_animation_job = None
+
+        self.event_frames = []
+        self.event_frame_index = 0
+
+    def load_event_background(self, filename):
+        self.stop_event_animation()
+
+        path = self.background_dir / filename
+
+        if not path.exists():
+            print(f"Event background not found: {path}")
+            return False
+
+        try:
+            image = Image.open(path)
+
+            # Animated GIF
+            if getattr(image, "n_frames", 1) > 1:
+
+                self.event_frames = []
+
+                for frame_number in range(image.n_frames):
+                    image.seek(frame_number)
+
+                    frame = image.convert("RGB")
+
+                    frame = frame.resize(
+                        (1280, 720),
+                        Image.Resampling.LANCZOS,
+                    )
+
+                    self.event_frames.append(
+                        ImageTk.PhotoImage(frame)
+                    )
+
+                if not self.event_frames:
+                    return False
+
+                self.event_frame_index = 0
+
+                self.background_image = (
+                    self.event_frames[0]
+                )
+
+                self.background_label = tk.Label(
+                    self.root,
+                    image=self.background_image,
+                    borderwidth=0,
+                )
+
+                self.background_label.place(
+                    x=0,
+                    y=0,
+                    relwidth=1,
+                    relheight=1,
+                )
+
+                self.background_label.lower()
+
+                self.animate_event_background()
+
+                return True
+
+            # Normal image
+            image = image.resize(
+                (1280, 720),
+                Image.Resampling.LANCZOS,
+            )
+
+            self.event_background = ImageTk.PhotoImage(
+                image
+            )
+
+            self.background_image = (
+                self.event_background
+            )
+
+            self.background_label = tk.Label(
+                self.root,
+                image=self.background_image,
+                borderwidth=0,
+            )
+
+            self.background_label.place(
+                x=0,
+                y=0,
+                relwidth=1,
+                relheight=1,
+            )
+
+            self.background_label.lower()
+
+            return True
+
+        except Exception as error:
+            print(
+                f"Could not load event background: {error}"
+            )
+            return False
+
+    def animate_event_background(self):
+        if not self.event_frames:
+            return
+
+        if not self.background_label:
+            return
+
+        self.event_frame_index += 1
+
+        if (
+            self.event_frame_index
+            >= len(self.event_frames)
+        ):
+            self.event_frame_index = 0
+
+        self.background_image = (
+            self.event_frames[
+                self.event_frame_index
+            ]
+        )
+
+        self.background_label.configure(
+            image=self.background_image
+        )
+
+        self.event_animation_job = self.root.after(
+            100,
+            self.animate_event_background,
+        )
+
     def set_background(self, show_name=None):
+        self.stop_event_animation()
+
         if self.background_label:
             self.background_label.destroy()
             self.background_label = None
@@ -97,6 +254,8 @@ class TVBox:
     # =========================
 
     def clear(self):
+        self.stop_event_animation()
+
         for widget in self.root.winfo_children():
             widget.destroy()
 
@@ -145,6 +304,97 @@ class TVBox:
             anchor="ne",
         )
 
+    def make_small_button(
+        self,
+        parent,
+        text,
+        bg,
+        fg,
+        command,
+    ):
+        button = tk.Button(
+            parent,
+            text=text,
+            command=command,
+            font=("DejaVu Sans", 16, "bold"),
+            bg=bg,
+            fg=fg,
+            activebackground="#555555",
+            activeforeground="white",
+            width=12,
+            height=2,
+            relief="flat",
+            cursor="hand2",
+        )
+
+        return button
+
+    # =========================
+    # EVENT DATES
+    # =========================
+
+    def get_current_event(self):
+        today = date.today()
+        # for testing dates use examle below:
+        # today = date(2026, 12, 31)
+
+        # Halloween:
+        # October 30 - November 1
+        if (
+            today.month == 10
+            and today.day >= 30
+        ):
+            return "halloween"
+
+        if (
+            today.month == 11
+            and today.day == 1
+        ):
+            return "halloween"
+
+        # Christmas:
+        # December 1 - January 10
+        if today.month == 12:
+            return "christmas"
+
+        if (
+            today.month == 1
+            and today.day <= 10
+        ):
+            return "christmas"
+
+        return None
+
+    def get_event_button_text(self):
+        event = self.get_current_event()
+
+        if event == "halloween":
+            return "🎃 ?"
+
+        if event == "christmas":
+            return "🎄 ?"
+
+        return "?"
+
+    def get_event_button_color(self):
+        event = self.get_current_event()
+
+        if event == "halloween":
+            return "#6A1B9A"
+
+        if event == "christmas":
+            return "#B71C1C"
+
+        return "#666666"
+
+    def handle_event_button(self):
+        event = self.get_current_event()
+
+        if event:
+            self.show_event_screen(event)
+        else:
+            self.show_random_normal()
+
     # =========================
     # MAIN MENU
     # =========================
@@ -163,10 +413,6 @@ class TVBox:
         )
 
         title.pack(pady=(25, 15))
-
-        # =========================
-        # SHOWS
-        # =========================
 
         button_frame = tk.Frame(
             self.root,
@@ -245,13 +491,13 @@ class TVBox:
             pady=5,
         )
 
-        # Friends
+        # Mystery / Event
         self.make_button(
             button_frame,
-            "FRIENDS",
-            "#666666",
+            self.get_event_button_text(),
+            self.get_event_button_color(),
             "white",
-            lambda: self.show_show("Friends"),
+            self.handle_event_button,
         ).grid(
             row=2,
             column=1,
@@ -296,6 +542,488 @@ class TVBox:
             row=0,
             column=1,
             padx=8,
+        )
+
+    # =========================
+    # NORMAL RANDOM
+    # =========================
+
+    def get_normal_random_media(self):
+        media = []
+
+        for show_name, seasons in self.library["shows"].items():
+
+            if show_name in (
+                "Halloween",
+                "Christmas",
+            ):
+                continue
+
+            for season_episodes in seasons.values():
+                media.extend(season_episodes)
+
+        media.extend(self.library["movies"])
+
+        return media
+
+    def show_random_normal(self):
+        media = self.get_normal_random_media()
+
+        if not media:
+            return
+
+        selected = random.choice(media)
+
+        self.clear()
+
+        self.root.configure(bg="#151515")
+
+        tk.Label(
+            self.root,
+            text="❔ RANDOM",
+            font=("DejaVu Sans", 30, "bold"),
+            bg="#151515",
+            fg="white",
+        ).pack(
+            pady=(70, 25),
+        )
+
+        tk.Label(
+            self.root,
+            text=selected.stem,
+            font=("DejaVu Sans", 22, "bold"),
+            bg="#333333",
+            fg="white",
+            padx=35,
+            pady=20,
+        ).pack(
+            pady=20,
+        )
+
+        self.make_small_button(
+            self.root,
+            "🎲 REROLL",
+            "#555555",
+            "white",
+            self.show_random_normal,
+        ).pack(
+            pady=5,
+        )
+
+        self.make_small_button(
+            self.root,
+            "▶ PLAY",
+            "#356B3D",
+            "white",
+            lambda: self.play_random_normal(
+                selected
+            ),
+        ).pack(
+            pady=5,
+        )
+
+        self.make_back_button(
+            self.build_main_menu
+        )
+
+    def play_random_normal(self, selected):
+        self.root.withdraw()
+
+        play(str(selected))
+
+        self.root.deiconify()
+
+    # =========================
+    # EVENT FILES
+    # =========================
+
+    def get_event_files(self, event):
+        if event == "halloween":
+            folder_name = "Halloween"
+        else:
+            folder_name = "Christmas"
+
+        event_dir = self.media_dir / folder_name
+
+        if not event_dir.exists():
+            print(
+                f"Event folder not found: {event_dir}"
+            )
+            return []
+
+        extensions = {
+            ".mp4",
+            ".mkv",
+            ".avi",
+            ".webm",
+            ".mov",
+        }
+
+        return sorted(
+            [
+                path
+                for path in event_dir.iterdir()
+                if path.is_file()
+                and path.suffix.lower()
+                in extensions
+            ],
+            key=lambda path: path.name.lower(),
+        )
+
+    # =========================
+    # EVENT RANDOM SCREEN
+    # =========================
+
+    def show_event_screen(
+        self,
+        event,
+        selected=None,
+    ):
+        self.clear()
+
+        if event == "halloween":
+
+            background_file = "halloween.gif"
+
+            title = "🎃 HALLOWEEN 🎃"
+            reroll_text = "🎃 REROLL"
+            play_text = "👻 PLAY"
+
+            fallback_bg = "#180B20"
+            title_color = "#FF8C00"
+            reroll_color = "#6A1B9A"
+            play_color = "#8B4513"
+
+        else:
+
+            background_file = "christmas.gif"
+
+            title = "🎄 CHRISTMAS 🎄"
+            reroll_text = "🎁 REROLL"
+            play_text = "🎄 PLAY"
+
+            fallback_bg = "#102018"
+            title_color = "#E53935"
+            reroll_color = "#B71C1C"
+            play_color = "#2E7D32"
+
+        self.root.configure(bg=fallback_bg)
+
+        self.load_event_background(
+            background_file
+        )
+
+        files = self.get_event_files(event)
+
+        if not files:
+
+            tk.Label(
+                self.root,
+                text=title,
+                font=("DejaVu Sans", 32, "bold"),
+                bg=fallback_bg,
+                fg=title_color,
+            ).pack(
+                pady=(80, 25),
+            )
+
+            tk.Label(
+                self.root,
+                text=(
+                    "Nothing here yet.\n"
+                    f"Put your files in media/"
+                    f"{'Halloween' if event == 'halloween' else 'Christmas'}/"
+                ),
+                font=("DejaVu Sans", 16),
+                bg=fallback_bg,
+                fg="white",
+            ).pack(
+                pady=20,
+            )
+
+            self.make_back_button(
+                self.build_main_menu
+            )
+
+            return
+
+        if selected is None:
+            selected = random.choice(files)
+
+        # =========================
+        # TITLE
+        # =========================
+
+        info_frame = tk.Frame(
+            self.root,
+            bg="#111111",
+        )
+
+        info_frame.pack(
+            pady=(55, 15),
+        )
+
+        tk.Label(
+            info_frame,
+            text=title,
+            font=("DejaVu Sans", 30, "bold"),
+            bg="#111111",
+            fg=title_color,
+            padx=25,
+            pady=8,
+        ).pack()
+
+        tk.Label(
+            info_frame,
+            text=selected.stem,
+            font=("DejaVu Sans", 20, "bold"),
+            bg="#111111",
+            fg="white",
+            padx=30,
+            pady=15,
+        ).pack()
+
+        # =========================
+        # BUTTONS
+        # =========================
+
+        self.make_small_button(
+            self.root,
+            reroll_text,
+            reroll_color,
+            "white",
+            lambda: self.show_event_screen(
+                event
+            ),
+        ).pack(
+            pady=4,
+        )
+
+        self.make_small_button(
+            self.root,
+            play_text,
+            play_color,
+            "white",
+            lambda: self.play_event_file(
+                selected
+            ),
+        ).pack(
+            pady=4,
+        )
+
+        self.make_small_button(
+            self.root,
+            "📂 BROWSE",
+            "#333333",
+            "white",
+            lambda: self.show_event_browse(
+                event,
+                page=0,
+            ),
+        ).pack(
+            pady=4,
+        )
+
+        self.make_back_button(
+            self.build_main_menu
+        )
+
+    def play_event_file(self, selected):
+        self.root.withdraw()
+
+        play(str(selected))
+
+        self.root.deiconify()
+
+    # =========================
+    # EVENT BROWSE
+    # =========================
+
+    def show_event_browse(
+        self,
+        event,
+        page=0,
+    ):
+        self.clear()
+
+        if event == "halloween":
+
+            background_file = "halloween.gif"
+            title = "🎃 HALLOWEEN"
+            fallback_bg = "#180B20"
+            title_color = "#FF8C00"
+            button_color = "#6A1B9A"
+
+        else:
+
+            background_file = "christmas.gif"
+            title = "🎄 CHRISTMAS"
+            fallback_bg = "#102018"
+            title_color = "#E53935"
+            button_color = "#B71C1C"
+
+        self.root.configure(bg=fallback_bg)
+
+        self.load_event_background(
+            background_file
+        )
+
+        files = self.get_event_files(event)
+
+        FILES_PER_PAGE = 10
+
+        start = page * FILES_PER_PAGE
+        end = start + FILES_PER_PAGE
+
+        page_files = files[start:end]
+
+        total_pages = (
+            len(files)
+            + FILES_PER_PAGE
+            - 1
+        ) // FILES_PER_PAGE
+
+        # =========================
+        # TITLE
+        # =========================
+
+        tk.Label(
+            self.root,
+            text=title,
+            font=("DejaVu Sans", 26, "bold"),
+            bg="#111111",
+            fg=title_color,
+        ).pack(
+            pady=(12, 3),
+        )
+
+        if total_pages > 1:
+
+            tk.Label(
+                self.root,
+                text=f"Page {page + 1} / {total_pages}",
+                font=("DejaVu Sans", 10),
+                bg="#111111",
+                fg="#AAAAAA",
+            ).pack(
+                pady=(0, 3),
+            )
+
+        # =========================
+        # PAGE NAVIGATION
+        # =========================
+
+        navigation = tk.Frame(
+            self.root,
+            bg="#111111",
+        )
+
+        navigation.pack(
+            pady=2,
+        )
+
+        if page > 0:
+
+            tk.Button(
+                navigation,
+                text="← PREV",
+                command=lambda: self.show_event_browse(
+                    event,
+                    page - 1,
+                ),
+                font=("DejaVu Sans", 11, "bold"),
+                bg="#222222",
+                fg="white",
+                activebackground="#444444",
+                activeforeground="white",
+                relief="flat",
+                cursor="hand2",
+                width=10,
+                height=1,
+            ).grid(
+                row=0,
+                column=0,
+                padx=5,
+            )
+
+        if page < total_pages - 1:
+
+            tk.Button(
+                navigation,
+                text="NEXT →",
+                command=lambda: self.show_event_browse(
+                    event,
+                    page + 1,
+                ),
+                font=("DejaVu Sans", 11, "bold"),
+                bg="#222222",
+                fg="white",
+                activebackground="#444444",
+                activeforeground="white",
+                relief="flat",
+                cursor="hand2",
+                width=10,
+                height=1,
+            ).grid(
+                row=0,
+                column=1,
+                padx=5,
+            )
+
+        # =========================
+        # FILE LIST
+        # =========================
+
+        file_frame = tk.Frame(
+            self.root,
+            bg="#111111",
+        )
+
+        file_frame.pack(
+            pady=2,
+        )
+
+        if not files:
+
+            tk.Label(
+                file_frame,
+                text="No files found.",
+                font=("DejaVu Sans", 16),
+                bg="#111111",
+                fg="white",
+            ).pack(
+                pady=20,
+            )
+
+        else:
+
+            for media_file in page_files:
+
+                button = self.make_small_button(
+                    file_frame,
+                    media_file.stem,
+                    "#333333",
+                    "white",
+                    lambda f=media_file:
+                        self.play_event_file(f),
+                )
+
+                button.config(
+                    width=42,
+                    height=1,
+                    font=("DejaVu Sans", 12, "bold"),
+                )
+
+                button.pack(
+                    pady=2,
+                )
+
+        # =========================
+        # BACK
+        # =========================
+
+        self.make_back_button(
+            lambda: self.show_event_screen(event)
         )
 
     # =========================
@@ -355,10 +1083,11 @@ class TVBox:
                     season,
                     "#333333",
                     "white",
-                    lambda s=season: self.show_season(
-                        show_name,
-                        s,
-                    ),
+                    lambda s=season:
+                        self.show_season(
+                            show_name,
+                            s,
+                        ),
                 )
 
                 button.config(
@@ -374,7 +1103,6 @@ class TVBox:
                     pady=4,
                 )
 
-            # Random episode
             self.make_button(
                 self.root,
                 "🎲 RANDOM EPISODE",
@@ -395,7 +1123,11 @@ class TVBox:
     # SEASON MENU
     # =========================
 
-    def show_season(self, show_name, season):
+    def show_season(
+        self,
+        show_name,
+        season,
+    ):
         self.show_episode_page(
             show_name,
             season,
@@ -426,7 +1158,9 @@ class TVBox:
         page_episodes = episodes[start:end]
 
         total_pages = (
-            len(episodes) + EPISODES_PER_PAGE - 1
+            len(episodes)
+            + EPISODES_PER_PAGE
+            - 1
         ) // EPISODES_PER_PAGE
 
         tk.Label(
@@ -451,10 +1185,6 @@ class TVBox:
                 pady=(0, 2),
             )
 
-        # =========================
-        # PAGE NAVIGATION
-        # =========================
-
         navigation = tk.Frame(
             self.root,
             bg="#111111",
@@ -469,11 +1199,12 @@ class TVBox:
             tk.Button(
                 navigation,
                 text="← PREV",
-                command=lambda: self.show_episode_page(
-                    show_name,
-                    season,
-                    page - 1,
-                ),
+                command=lambda:
+                    self.show_episode_page(
+                        show_name,
+                        season,
+                        page - 1,
+                    ),
                 font=("DejaVu Sans", 11, "bold"),
                 bg="#222222",
                 fg="white",
@@ -494,11 +1225,12 @@ class TVBox:
             tk.Button(
                 navigation,
                 text="NEXT →",
-                command=lambda: self.show_episode_page(
-                    show_name,
-                    season,
-                    page + 1,
-                ),
+                command=lambda:
+                    self.show_episode_page(
+                        show_name,
+                        season,
+                        page + 1,
+                    ),
                 font=("DejaVu Sans", 11, "bold"),
                 bg="#222222",
                 fg="white",
@@ -513,10 +1245,6 @@ class TVBox:
                 column=1,
                 padx=5,
             )
-
-        # =========================
-        # EPISODES
-        # =========================
 
         episode_frame = tk.Frame(
             self.root,
@@ -534,7 +1262,8 @@ class TVBox:
                 episode.stem,
                 "#333333",
                 "white",
-                lambda e=episode: self.play_episode(e),
+                lambda e=episode:
+                    self.play_episode(e),
             )
 
             button.config(
@@ -548,7 +1277,8 @@ class TVBox:
             )
 
         self.make_back_button(
-            lambda: self.show_show(show_name)
+            lambda:
+                self.show_show(show_name)
         )
 
     # =========================
@@ -558,7 +1288,9 @@ class TVBox:
     def random_show_episode(self, show_name):
         episodes = []
 
-        for season_episodes in self.library["shows"][show_name].values():
+        for season_episodes in (
+            self.library["shows"][show_name].values()
+        ):
             episodes.extend(season_episodes)
 
         if not episodes:
@@ -569,109 +1301,16 @@ class TVBox:
             episodes,
         )
 
-    def show_random_episode(self, show_name, episodes):
+    def show_random_episode(
+        self,
+        show_name,
+        episodes,
+    ):
         self.clear()
 
         self.set_background(show_name)
 
         episode = random.choice(episodes)
-
-        self.random_episodes = episodes
-        self.random_episode = episode
-        self.random_show_name = show_name
-
-        # =========================
-        # TITLE
-        # =========================
-
-        tk.Label(
-            self.root,
-            text="🎲 RANDOM EPISODE",
-            font=("DejaVu Sans", 28, "bold"),
-            bg="#111111",
-            fg="white",
-        ).pack(
-            pady=(80, 20),
-        )
-
-        # =========================
-        # SELECTED EPISODE
-        # =========================
-
-        tk.Label(
-            self.root,
-            text=episode.stem,
-            font=("DejaVu Sans", 22, "bold"),
-            bg="#333333",
-            fg="white",
-            padx=30,
-            pady=20,
-        ).pack(
-            pady=20,
-        )
-
-        # =========================
-        # REROLL
-        # =========================
-
-        tk.Button(
-            self.root,
-            text="🎲 REROLL",
-            command=lambda: self.reroll_episode(
-                show_name,
-                episodes,
-            ),
-            font=("DejaVu Sans", 16, "bold"),
-            bg="#555555",
-            fg="white",
-            activebackground="#666666",
-            activeforeground="white",
-            relief="flat",
-            cursor="hand2",
-            width=16,
-            height=2,
-        ).pack(
-            pady=8,
-        )
-
-        # =========================
-        # PLAY
-        # =========================
-
-        tk.Button(
-            self.root,
-            text="▶ PLAY",
-            command=lambda: self.play_random_selected(
-                episode,
-                show_name,
-            ),
-            font=("DejaVu Sans", 16, "bold"),
-            bg="#356B3D",
-            fg="white",
-            activebackground="#467C4D",
-            activeforeground="white",
-            relief="flat",
-            cursor="hand2",
-            width=16,
-            height=2,
-        ).pack(
-            pady=8,
-        )
-
-        self.make_back_button(
-            lambda: self.show_show(show_name)
-        )
-
-    def reroll_episode(self, show_name, episodes):
-        self.clear()
-
-        self.set_background(show_name)
-
-        episode = random.choice(episodes)
-
-        self.random_episodes = episodes
-        self.random_episode = episode
-        self.random_show_name = show_name
 
         tk.Label(
             self.root,
@@ -695,60 +1334,57 @@ class TVBox:
             pady=20,
         )
 
-        tk.Button(
+        self.make_small_button(
             self.root,
-            text="🎲 REROLL",
-            command=lambda: self.reroll_episode(
-                show_name,
-                episodes,
-            ),
-            font=("DejaVu Sans", 16, "bold"),
-            bg="#555555",
-            fg="white",
-            activebackground="#666666",
-            activeforeground="white",
-            relief="flat",
-            cursor="hand2",
-            width=16,
-            height=2,
+            "🎲 REROLL",
+            "#555555",
+            "white",
+            lambda:
+                self.show_random_episode(
+                    show_name,
+                    episodes,
+                ),
         ).pack(
-            pady=8,
+            pady=5,
         )
 
-        tk.Button(
+        self.make_small_button(
             self.root,
-            text="▶ PLAY",
-            command=lambda: self.play_random_selected(
-                episode,
-                show_name,
-            ),
-            font=("DejaVu Sans", 16, "bold"),
-            bg="#356B3D",
-            fg="white",
-            activebackground="#467C4D",
-            activeforeground="white",
-            relief="flat",
-            cursor="hand2",
-            width=16,
-            height=2,
+            "▶ PLAY",
+            "#356B3D",
+            "white",
+            lambda:
+                self.play_random_selected(
+                    episode,
+                    show_name,
+                ),
         ).pack(
-            pady=8,
+            pady=5,
         )
 
         self.make_back_button(
-            lambda: self.show_show(show_name)
+            lambda:
+                self.show_show(show_name)
         )
 
-    def play_random_selected(self, episode, show_name):
+    def play_random_selected(
+        self,
+        episode,
+        show_name,
+    ):
         all_episodes = []
 
-        for season_episodes in self.library["shows"][show_name].values():
+        for season_episodes in (
+            self.library["shows"][show_name].values()
+        ):
             all_episodes.extend(season_episodes)
 
         if not all_episodes:
             return
 
-        start_index = all_episodes.index(episode)
+        start_index = all_episodes.index(
+            episode
+        )
 
         audio_track = None
 
@@ -772,8 +1408,9 @@ class TVBox:
     def play_episode(self, episode):
         show_name = None
 
-        for name, seasons in self.library["shows"].items():
-
+        for name, seasons in (
+            self.library["shows"].items()
+        ):
             for season_episodes in seasons.values():
 
                 if episode in season_episodes:
@@ -783,10 +1420,7 @@ class TVBox:
             if show_name:
                 break
 
-        # =========================
-        # MOVIE
-        # =========================
-
+        # Movie
         if show_name is None:
 
             self.root.withdraw()
@@ -797,19 +1431,22 @@ class TVBox:
 
             return
 
-        # =========================
-        # SHOW
-        # =========================
-
+        # Show
         all_episodes = []
 
-        for season_episodes in self.library["shows"][show_name].values():
-            all_episodes.extend(season_episodes)
+        for season_episodes in (
+            self.library["shows"][show_name].values()
+        ):
+            all_episodes.extend(
+                season_episodes
+            )
 
         if not all_episodes:
             return
 
-        start_index = all_episodes.index(episode)
+        start_index = all_episodes.index(
+            episode
+        )
 
         audio_track = None
 
@@ -848,7 +1485,9 @@ class TVBox:
         page_movies = movies[start:end]
 
         total_pages = (
-            len(movies) + MOVIES_PER_PAGE - 1
+            len(movies)
+            + MOVIES_PER_PAGE
+            - 1
         ) // MOVIES_PER_PAGE
 
         tk.Label(
@@ -873,10 +1512,6 @@ class TVBox:
                 pady=(0, 3),
             )
 
-        # =========================
-        # PAGE NAVIGATION
-        # =========================
-
         navigation = tk.Frame(
             self.root,
             bg="#111111",
@@ -891,9 +1526,10 @@ class TVBox:
             tk.Button(
                 navigation,
                 text="← PREV",
-                command=lambda: self.show_movie_page(
-                    page - 1
-                ),
+                command=lambda:
+                    self.show_movie_page(
+                        page - 1
+                    ),
                 font=("DejaVu Sans", 11, "bold"),
                 bg="#222222",
                 fg="white",
@@ -914,9 +1550,10 @@ class TVBox:
             tk.Button(
                 navigation,
                 text="NEXT →",
-                command=lambda: self.show_movie_page(
-                    page + 1
-                ),
+                command=lambda:
+                    self.show_movie_page(
+                        page + 1
+                    ),
                 font=("DejaVu Sans", 11, "bold"),
                 bg="#222222",
                 fg="white",
@@ -932,32 +1569,17 @@ class TVBox:
                 padx=5,
             )
 
-        # =========================
-        # RANDOM MOVIE
-        # =========================
-
         if movies:
 
-            tk.Button(
+            self.make_small_button(
                 self.root,
-                text="🎲 RANDOM MOVIE",
-                command=self.play_random_movie,
-                font=("DejaVu Sans", 11, "bold"),
-                bg="#555555",
-                fg="white",
-                activebackground="#666666",
-                activeforeground="white",
-                relief="flat",
-                cursor="hand2",
-                width=18,
-                height=1,
+                "🎲 RANDOM MOVIE",
+                "#555555",
+                "white",
+                self.play_random_movie,
             ).pack(
                 pady=(2, 5),
             )
-
-        # =========================
-        # MOVIE LIST
-        # =========================
 
         movie_frame = tk.Frame(
             self.root,
@@ -989,7 +1611,8 @@ class TVBox:
                     movie.stem,
                     "#333333",
                     "white",
-                    lambda m=movie: self.play_episode(m),
+                    lambda m=movie:
+                        self.play_episode(m),
                 )
 
                 button.config(
@@ -1018,16 +1641,12 @@ class TVBox:
 
         self.show_random_movie(movies)
 
-
     def show_random_movie(self, movies):
         self.clear()
 
         self.root.configure(bg="#111111")
 
         movie = random.choice(movies)
-
-        self.random_movie = movie
-        self.random_movies = movies
 
         tk.Label(
             self.root,
@@ -1051,46 +1670,35 @@ class TVBox:
             pady=20,
         )
 
-        # REROLL
-        tk.Button(
+        self.make_small_button(
             self.root,
-            text="🎲 REROLL",
-            command=lambda: self.show_random_movie(movies),
-            font=("DejaVu Sans", 16, "bold"),
-            bg="#555555",
-            fg="white",
-            activebackground="#666666",
-            activeforeground="white",
-            relief="flat",
-            cursor="hand2",
-            width=16,
-            height=2,
+            "🎲 REROLL",
+            "#555555",
+            "white",
+            lambda:
+                self.show_random_movie(
+                    movies
+                ),
         ).pack(
-            pady=8,
+            pady=5,
         )
 
-        # PLAY
-        tk.Button(
+        self.make_small_button(
             self.root,
-            text="▶ PLAY",
-            command=lambda: self.play_selected_movie(movie),
-            font=("DejaVu Sans", 16, "bold"),
-            bg="#356B3D",
-            fg="white",
-            activebackground="#467C4D",
-            activeforeground="white",
-            relief="flat",
-            cursor="hand2",
-            width=16,
-            height=2,
+            "▶ PLAY",
+            "#356B3D",
+            "white",
+            lambda:
+                self.play_selected_movie(
+                    movie
+                ),
         ).pack(
-            pady=8,
+            pady=5,
         )
 
         self.make_back_button(
             self.show_movies
         )
-
 
     def play_selected_movie(self, movie):
         self.root.withdraw()
