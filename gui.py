@@ -1117,9 +1117,15 @@ class TVBox:
             )
 
             seasons = list(
-                self.library[
-                    "shows"
-                ][show_name].keys()
+                self.library["shows"][show_name].keys()
+            )
+
+            seasons.sort(
+                key=lambda s: int(
+                    ''.join(
+                        filter(str.isdigit, s)
+                    )
+                )
             )
 
             for index, season in enumerate(

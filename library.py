@@ -95,7 +95,19 @@ def scan_library(media_path):
 
         seasons = {}
 
-        for season_dir in item.iterdir():
+        season_dirs = sorted(
+            item.iterdir(),
+            key=lambda path: int(
+                "".join(
+                    filter(str.isdigit, path.name)
+                )
+            ) if any(
+                char.isdigit()
+                for char in path.name
+            ) else 9999
+        )
+
+        for season_dir in season_dirs:
 
             if not season_dir.is_dir():
                 continue
