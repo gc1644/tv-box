@@ -45,6 +45,14 @@ class TVBox:
             / "backgrounds"
         )
 
+        # Movie artwork goes here:
+        #
+        # data/backgrounds/movies/
+        #
+        self.movie_background_dir = (
+            self.background_dir / "movies"
+        )
+
         self.backgrounds = {
             "Simpsons": self.load_background(
                 "simpsons.jpeg"
@@ -165,7 +173,6 @@ class TVBox:
 
         self.sleep_timer_job = None
         self.sleep_deadline = None
-
         self.sleep_button = None
 
         self.root.withdraw()
@@ -190,14 +197,189 @@ class TVBox:
 
             return None
 
-        image = Image.open(path)
+        try:
 
-        image = image.resize(
-            (1280, 720),
-            Image.Resampling.LANCZOS,
+            image = Image.open(path)
+
+            image = image.resize(
+                (1280, 720),
+                Image.Resampling.LANCZOS,
+            )
+
+            return ImageTk.PhotoImage(image)
+
+        except Exception as error:
+
+            print(
+                f"Could not load background "
+                f"{path}: {error}"
+            )
+
+            return None
+
+    def find_movie_background(self, movie):
+
+        """
+        Find custom artwork for a movie.
+
+        Matching is case-insensitive and ignores
+        the image extension.
+
+        Example:
+
+            Movie:
+                Back To The Future.mkv
+
+            Artwork:
+                back to the future.jpg
+
+        will match.
+        """
+
+        if not self.movie_background_dir.exists():
+            return None
+
+        movie_name = movie.stem.casefold()
+
+        supported_extensions = {
+            ".jpg",
+            ".jpeg",
+            ".png",
+            ".webp",
+        }
+
+        try:
+
+            for artwork in (
+                self.movie_background_dir.iterdir()
+            ):
+
+                if not artwork.is_file():
+                    continue
+
+                if (
+                    artwork.suffix.lower()
+                    not in supported_extensions
+                ):
+                    continue
+
+                if (
+                    artwork.stem.casefold()
+                    == movie_name
+                ):
+
+                    return artwork
+
+        except OSError as error:
+
+            print(
+                f"Could not search movie "
+                f"backgrounds: {error}"
+            )
+
+        return None
+
+    def set_movie_background(self, movie):
+
+        artwork = self.find_movie_background(
+            movie
         )
 
-        return ImageTk.PhotoImage(image)
+        if artwork is None:
+
+            self.set_background(None)
+            return
+
+        try:
+
+            image = Image.open(artwork)
+
+            image = image.resize(
+                (1280, 720),
+                Image.Resampling.LANCZOS,
+            )
+
+            self.background_image = (
+                ImageTk.PhotoImage(image)
+            )
+
+            self.background_label = tk.Label(
+                self.root,
+                image=self.background_image,
+                borderwidth=0,
+            )
+
+            self.background_label.place(
+                x=0,
+                y=0,
+                relwidth=1,
+                relheight=1,
+            )
+
+            self.background_label.lower()
+
+        except Exception as error:
+
+            print(
+                f"Could not load movie "
+                f"background {artwork}: {error}"
+            )
+
+            self.set_background(None)
+
+    def get_show_for_episode(self, episode):
+
+        for show_name, seasons in (
+            self.library["shows"].items()
+        ):
+
+            for season_episodes in (
+                seasons.values()
+            ):
+
+                if episode in season_episodes:
+                    return show_name
+
+        return None
+
+    def set_random_background(self, media_file):
+
+        """
+        Set the appropriate background for the
+        normal ? randomizer.
+
+        Shows:
+            use their normal show background.
+
+        Movies:
+            use matching artwork from
+            data/backgrounds/movies/.
+
+        Events are NOT handled here.
+        """
+
+        show_name = self.get_show_for_episode(
+            media_file
+        )
+
+        if show_name is not None:
+
+            self.set_background(
+                show_name
+            )
+
+            return
+
+        if media_file in self.library["movies"]:
+
+            self.set_movie_background(
+                media_file
+            )
+
+            return
+
+        # Fallback for anything else.
+        self.set_background(None)
 
     def stop_event_animation(self):
 
@@ -425,8 +607,6 @@ class TVBox:
         self.background_label = None
         self.background_image = None
 
-        # The button was destroyed.
-        # The timer itself continues running.
         self.sleep_button = None
 
     def make_button(
@@ -577,16 +757,6 @@ class TVBox:
 
         today = date.today()
 
-        # Testing date:
-        # today = date(
-        #       2026,
-        #       12,
-        #       31,
-        #    )
-
-        # Halloween:
-        # October 30 - November 1
-
         if (
             today.month == 10
             and today.day >= 30
@@ -598,9 +768,6 @@ class TVBox:
             and today.day == 1
         ):
             return "halloween"
-
-        # Christmas:
-        # December 1 - January 10
 
         if today.month == 12:
             return "christmas"
@@ -661,10 +828,6 @@ class TVBox:
 
         self.make_sleep_button()
 
-        # ------------------------------------------
-        # Title
-        # ------------------------------------------
-
         title = tk.Label(
             self.root,
             text="📺 TV BOX",
@@ -696,10 +859,6 @@ class TVBox:
         subtitle.pack(
             pady=(0, 18)
         )
-
-        # ------------------------------------------
-        # Show grid
-        # ------------------------------------------
 
         show_frame = tk.Frame(
             self.root,
@@ -760,10 +919,6 @@ class TVBox:
                 pady=(3, 0),
             )
 
-        # ------------------------------------------
-        # Shows
-        # ------------------------------------------
-
         show_card(
             "SIMPSONS",
             "#F5C518",
@@ -809,10 +964,6 @@ class TVBox:
             2,
             0,
         )
-
-        # ------------------------------------------
-        # Mystery button
-        # ------------------------------------------
 
         mystery_color = (
             self.get_event_button_color()
@@ -870,10 +1021,6 @@ class TVBox:
             pady=(3, 0),
         )
 
-        # ------------------------------------------
-        # Separator
-        # ------------------------------------------
-
         tk.Frame(
             self.root,
             bg="#333333",
@@ -882,10 +1029,6 @@ class TVBox:
         ).pack(
             pady=(14, 12),
         )
-
-        # ------------------------------------------
-        # Utilities
-        # ------------------------------------------
 
         utility_frame = tk.Frame(
             self.root,
@@ -946,10 +1089,6 @@ class TVBox:
             padx=7,
         )
 
-        # ------------------------------------------
-        # Footer
-        # ------------------------------------------
-
         tk.Label(
             self.root,
             text="© 2026",
@@ -986,8 +1125,11 @@ class TVBox:
 
         self.clear()
 
-        self.root.configure(
-            bg="#151515"
+        # NEW:
+        # Automatically use either the show's
+        # background or matching movie artwork.
+        self.set_random_background(
+            selected
         )
 
         tk.Label(
@@ -1562,24 +1704,9 @@ class TVBox:
         episode,
     ):
 
-        show_name = None
-
-        for name, seasons in (
-            self.library[
-                "shows"
-            ].items()
-        ):
-
-            for season_episodes in (
-                seasons.values()
-            ):
-
-                if episode in season_episodes:
-                    show_name = name
-                    break
-
-            if show_name:
-                break
+        show_name = self.get_show_for_episode(
+            episode
+        )
 
         if show_name is None:
 
@@ -1783,16 +1910,22 @@ class TVBox:
 
         if movies:
 
-            random_movie_button = self.make_small_button(
-                self.root,
-                "🎲 RANDOM MOVIE",
-                "#555555",
-                "white",
-                self.play_random_movie,
+            random_movie_button = (
+                self.make_small_button(
+                    self.root,
+                    "🎲 RANDOM MOVIE",
+                    "#555555",
+                    "white",
+                    self.play_random_movie,
+                )
             )
 
             random_movie_button.config(
-                font=("DejaVu Sans", 13, "bold"),
+                font=(
+                    "DejaVu Sans",
+                    13,
+                    "bold",
+                ),
                 width=16,
                 height=2,
             )
@@ -1810,30 +1943,30 @@ class TVBox:
                 pady=2
             )
 
-        for movie in page_movies:
+            for movie in page_movies:
 
-            button = self.make_button(
-                movie_frame,
-                movie.stem,
-                "#333333",
-                "white",
-                lambda m=movie:
-                    self.play_episode(m),
-            )
+                button = self.make_button(
+                    movie_frame,
+                    movie.stem,
+                    "#333333",
+                    "white",
+                    lambda m=movie:
+                        self.play_episode(m),
+                )
 
-            button.config(
-                width=42,
-                height=1,
-                font=(
-                    "DejaVu Sans",
-                    12,
-                    "bold",
-                ),
-            )
+                button.config(
+                    width=42,
+                    height=1,
+                    font=(
+                        "DejaVu Sans",
+                        12,
+                        "bold",
+                    ),
+                )
 
-            button.pack(
-                pady=2
-            )
+                button.pack(
+                    pady=2
+                )
 
         self.make_back_button(
             self.build_main_menu
@@ -1863,12 +1996,14 @@ class TVBox:
 
         self.clear()
 
-        self.root.configure(
-            bg="#111111"
-        )
-
         movie = random.choice(
             movies
+        )
+
+        # NEW:
+        # Use matching movie artwork if available.
+        self.set_movie_background(
+            movie
         )
 
         tk.Label(
