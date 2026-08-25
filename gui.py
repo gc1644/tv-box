@@ -846,7 +846,7 @@ class TVBox:
 
         subtitle = tk.Label(
             self.root,
-            text="WHAT DO YOU WANT TO WATCH?",
+            text="v1.0",
             font=(
                 "DejaVu Sans",
                 11,
