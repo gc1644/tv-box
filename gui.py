@@ -467,6 +467,19 @@ class TVBox:
             cursor="hand2",
         )
 
+    def make_nav_button(self, parent, text, command):
+        return tk.Button(
+            parent,
+            text=text,
+            command=command,
+            font=("DejaVu Sans", 11, "bold"),
+            bg="#222222",
+            fg="white",
+            relief="flat",
+            cursor="hand2",
+            width=10,
+        )
+
     def make_back_button(self, command):
         tk.Button(
             self.root,
@@ -551,6 +564,7 @@ class TVBox:
 
     def get_current_event(self):
         today = date.today()
+        today = date(2045, 12, 24)
 
         if today.month == 10 and today.day >= 30:
             return "halloween"
@@ -864,29 +878,17 @@ class TVBox:
         navigation.pack(pady=(2, 5))
 
         if page > 0:
-            tk.Button(
+            self.make_nav_button(
                 navigation,
-                text="← PREV",
-                command=lambda: self.show_episode_page(show_name, season, page - 1),
-                font=("DejaVu Sans", 11, "bold"),
-                bg="#222222",
-                fg="white",
-                relief="flat",
-                cursor="hand2",
-                width=10,
+                "← PREV",
+                lambda: self.show_episode_page(show_name, season, page - 1),
             ).grid(row=0, column=0, padx=5)
 
         if page < total_pages - 1:
-            tk.Button(
+            self.make_nav_button(
                 navigation,
-                text="NEXT →",
-                command=lambda: self.show_episode_page(show_name, season, page + 1),
-                font=("DejaVu Sans", 11, "bold"),
-                bg="#222222",
-                fg="white",
-                relief="flat",
-                cursor="hand2",
-                width=10,
+                "NEXT →",
+                lambda: self.show_episode_page(show_name, season, page + 1),
             ).grid(row=0, column=1, padx=5)
 
         episode_frame = tk.Frame(self.root, bg="#111111")
@@ -1113,29 +1115,17 @@ class TVBox:
         navigation.pack(pady=(2, 4))
 
         if page > 0:
-            tk.Button(
+            self.make_nav_button(
                 navigation,
-                text="← PREV",
-                command=lambda: self.show_classics_page(folder, page - 1),
-                font=("DejaVu Sans", 11, "bold"),
-                bg="#222222",
-                fg="white",
-                relief="flat",
-                cursor="hand2",
-                width=10,
+                "← PREV",
+                lambda: self.show_classics_page(folder, page - 1),
             ).grid(row=0, column=0, padx=5)
 
         if page < total_pages - 1:
-            tk.Button(
+            self.make_nav_button(
                 navigation,
-                text="NEXT →",
-                command=lambda: self.show_classics_page(folder, page + 1),
-                font=("DejaVu Sans", 11, "bold"),
-                bg="#222222",
-                fg="white",
-                relief="flat",
-                cursor="hand2",
-                width=10,
+                "NEXT →",
+                lambda: self.show_classics_page(folder, page + 1),
             ).grid(row=0, column=1, padx=5)
 
         # Random button: files only, from this folder only.
@@ -1257,65 +1247,6 @@ class TVBox:
             self.make_back_button(lambda: self.show_classics(folder))
 
     # ==============================================
-    # OLD MOVIE API
-    # ==============================================
-
-    def show_movie_page(self, page=0):
-        self.show_classics(page=page)
-
-    def play_random_movie(self):
-        movies = self.library["movies"]
-        if not movies:
-            return
-        self.show_random_movie(movies)
-
-    def show_random_movie(self, movies):
-        self.clear()
-        movie = random.choice(movies)
-        self.set_movie_background(movie)
-
-        tk.Label(
-            self.root,
-            text="🎲 RANDOM MOVIE",
-            font=("DejaVu Sans", 28, "bold"),
-            bg="#111111",
-            fg="white",
-        ).pack(pady=(80, 20))
-
-        tk.Label(
-            self.root,
-            text=movie.stem,
-            font=("DejaVu Sans", 22, "bold"),
-            bg="#333333",
-            fg="white",
-            padx=30,
-            pady=20,
-        ).pack(pady=20)
-
-        self.make_small_button(
-            self.root,
-            "🎲 REROLL",
-            "#555555",
-            "white",
-            lambda: self.show_random_movie(movies),
-        ).pack(pady=5)
-
-        self.make_small_button(
-            self.root,
-            "▶ PLAY",
-            "#356B3D",
-            "white",
-            lambda: self.play_selected_movie(movie),
-        ).pack(pady=5)
-
-        self.make_back_button(self.show_movies)
-
-    def play_selected_movie(self, movie):
-        self.root.withdraw()
-        play(str(movie))
-        self.root.deiconify()
-
-    # ==============================================
     # EVENT FILES
     # ==============================================
 
@@ -1353,7 +1284,7 @@ class TVBox:
             play_color = "#8B4513"
         else:
             background_file = "christmas.gif"
-            title = "🎄 CHRISTMAS 🎄"
+            title = "🎄 HAPPY HOLIDAYS! 🎄"
             reroll_text = "🎁 REROLL"
             play_text = "🎄 PLAY"
             fallback_bg = "#102018"
@@ -1496,29 +1427,17 @@ class TVBox:
         navigation.pack(pady=2)
 
         if page > 0:
-            tk.Button(
+            self.make_nav_button(
                 navigation,
-                text="← PREV",
-                command=lambda: self.show_event_browse(event, page - 1),
-                font=("DejaVu Sans", 11, "bold"),
-                bg="#222222",
-                fg="white",
-                relief="flat",
-                cursor="hand2",
-                width=10,
+                "← PREV",
+                lambda: self.show_event_browse(event, page - 1),
             ).grid(row=0, column=0, padx=5)
 
         if page < total_pages - 1:
-            tk.Button(
+            self.make_nav_button(
                 navigation,
-                text="NEXT →",
-                command=lambda: self.show_event_browse(event, page + 1),
-                font=("DejaVu Sans", 11, "bold"),
-                bg="#222222",
-                fg="white",
-                relief="flat",
-                cursor="hand2",
-                width=10,
+                "NEXT →",
+                lambda: self.show_event_browse(event, page + 1),
             ).grid(row=0, column=1, padx=5)
 
         file_frame = tk.Frame(self.root, bg="#111111")
