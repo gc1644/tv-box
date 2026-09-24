@@ -556,7 +556,7 @@ class TVBox:
         ):
             age -= 1
 
-        return f"HAPPY {age}"
+        return f"HAPPY {age}!"
 
     # ==============================================
     # EVENTS
@@ -564,8 +564,7 @@ class TVBox:
 
     def get_current_event(self):
         today = date.today()
-        today = date(2045, 12, 24)
-
+        
         if today.month == 10 and today.day >= 30:
             return "halloween"
         if today.month == 11 and today.day == 1:
@@ -655,11 +654,11 @@ class TVBox:
             button.pack()
             tk.Frame(card, bg=color, height=3).pack(fill="x", pady=(3, 0))
 
-        show_card("SIMPSONS", "#F5C518", lambda: self.show_show("Simpsons"), 0, 0, "black")
+        show_card("SIMPSONS", "#F5C518", lambda: self.show_show("Simpsons"), 0, 0)
         show_card("FUTURAMA", "#245A9C", lambda: self.show_show("Futurama"), 0, 1)
-        show_card("ALF", "#A0522D", lambda: self.show_show("Alf"), 1, 0)
-        show_card("SOUTH PARK", "#356B3D", lambda: self.show_show("South Park"), 1, 1)
-        show_card("SPONGEBOB", "#F0806B", lambda: self.show_show("SpongeBob"), 2, 0)
+        show_card("ALF", "#A0522D", lambda: self.show_show("Alf"), 1, 1)
+        show_card("SOUTH PARK", "#356B3D", lambda: self.show_show("South Park"), 2, 0)
+        show_card("SPONGEBOB", "#2196F3", lambda: self.show_show("SpongeBob"), 1, 0)
 
         mystery_color = self.get_event_button_color()
         mystery_text = self.get_event_button_text()
@@ -674,7 +673,7 @@ class TVBox:
             bg=mystery_color,
             fg=("#B71C1C" if self.get_current_event() == "christmas" else "white"),
             activebackground=mystery_color,
-            activeforeground="white",
+            activeforeground="#D3D3D3",
             relief="flat",
             bd=0,
             width=16,
@@ -1275,7 +1274,7 @@ class TVBox:
 
         if event == "halloween":
             background_file = "halloween.gif"
-            title = "🎃 HALLOWEEN 🎃"
+            title = "🎃 HAPPY HALLOWEEN 🎃"
             reroll_text = "🎃 REROLL"
             play_text = "👻 PLAY"
             fallback_bg = "#180B20"
@@ -1284,11 +1283,11 @@ class TVBox:
             play_color = "#8B4513"
         else:
             background_file = "christmas.gif"
-            title = "🎄 HAPPY HOLIDAYS! 🎄"
+            title = "🎄 HAPPY HOLIDAYS 🎄"
             reroll_text = "🎁 REROLL"
             play_text = "🎄 PLAY"
             fallback_bg = "#102018"
-            title_color = "#E53935"
+            title_color = "#FFFFFF"
             reroll_color = "#B71C1C"
             play_color = "#2E7D32"
 
@@ -1388,7 +1387,7 @@ class TVBox:
             title_color = "#FF8C00"
         else:
             background_file = "christmas.gif"
-            title = "🎄 CHRISTMAS"
+            title = "🎄 HAPPY HOLIDAYS 🎄" 
             fallback_bg = "#102018"
             title_color = "#E53935"
 
