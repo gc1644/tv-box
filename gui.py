@@ -686,11 +686,11 @@ class TVBox:
             button.bind("<Enter>", lambda event, c=hover_color: button.config(bg=c))
             button.bind("<Leave>", lambda event, c=color: button.config(bg=c))
 
-        show_card("SIMPSONS", "#F6C945", lambda: self.show_show("Simpsons"), 0, 0, "#171717", "#3A2F08")
+        show_card("SIMPSONS", "#F6C945", lambda: self.show_show("Simpsons"), 0, 0, "white", "#3A2F08")
         show_card("FUTURAMA", "#2F8FCA", lambda: self.show_show("Futurama"), 0, 1, "white", "#0B3045")
         show_card("ALF", "#B8663C", lambda: self.show_show("Alf"), 1, 0, "white", "#3E1F13")
-        show_card("SOUTH PARK", "#5F9F68", lambda: self.show_show("South Park"), 1, 1, "white", "#183A20")
-        show_card("SPONGEBOB", "#E87868", lambda: self.show_show("SpongeBob"), 2, 0, "white", "#4A2020")
+        show_card("SOUTH PARK", "#2E5D34", lambda: self.show_show("South Park"), 1, 1, "white", "#183A20")
+        show_card("SPONGEBOB", "#42A5F5", lambda: self.show_show("SpongeBob"), 2, 0, "white", "#4A2020")
 
         mystery_color = self.get_event_button_color()
         mystery_text = self.get_event_button_text()
@@ -1318,7 +1318,7 @@ class TVBox:
 
         if event == "halloween":
             background_file = "halloween.gif"
-            title = "🎃 HALLOWEEN 🎃"
+            title = "🎃 HAPPY HALLOWEEN 🎃"
             reroll_text = "🎃 REROLL"
             play_text = "👻 PLAY"
             fallback_bg = "#180B20"
@@ -1327,7 +1327,7 @@ class TVBox:
             play_color = "#8B4513"
         else:
             background_file = "christmas.gif"
-            title = "🎄 CHRISTMAS 🎄"
+            title = "🎄 HAPPY HOLIDAYS 🎄"
             reroll_text = "🎁 REROLL"
             play_text = "🎄 PLAY"
             fallback_bg = "#102018"
