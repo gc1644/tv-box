@@ -62,7 +62,6 @@ class TVBox:
             "events": {},
         }
 
-        self.start_confetti_animation()
         self.build_main_menu()
 
     # ==============================================
@@ -621,7 +620,7 @@ class TVBox:
 
         title = tk.Label(
             self.root,
-            text="📺 KOTKI TV",
+            text="📺 TV BOX",
             font=("DejaVu Sans", 30, "bold"),
             bg="#111111",
             fg="white",
@@ -629,6 +628,11 @@ class TVBox:
         title.pack(pady=(28, 2))
 
         birthday_text = self.get_birthday_text()
+
+        if birthday_text:
+            self.start_confetti_animation()
+        else:
+            self.stop_confetti_animation()
 
         subtitle = tk.Label(
             self.root,
