@@ -62,6 +62,7 @@ class TVBox:
             "events": {},
         }
 
+        self.start_confetti_animation()
         self.build_main_menu()
 
     # ==============================================
@@ -428,12 +429,23 @@ class TVBox:
 
     def clear(self):
         self.stop_event_animation()
-        self.stop_confetti_animation()
         for widget in self.root.winfo_children():
+            if widget is self.confetti_canvas:
+                continue
             widget.destroy()
         self.background_label = None
         self.background_image = None
         self.sleep_button = None
+
+    def lighten_color(self, color):
+        """Return a slightly brighter version of a hex color for hover effects."""
+        color = color.lstrip("#")
+        if len(color) != 6:
+            return "#666666"
+
+        rgb = [int(color[index:index + 2], 16) for index in (0, 2, 4)]
+        rgb = [min(255, value + 28) for value in rgb]
+        return "#" + "".join(f"{value:02X}" for value in rgb)
 
     def make_button(self, parent, text, bg, fg, command):
         return tk.Button(
@@ -556,7 +568,7 @@ class TVBox:
         ):
             age -= 1
 
-        return f"HAPPY {age}!"
+        return f"HAPPY {age}"
 
     # ==============================================
     # EVENTS
@@ -564,7 +576,7 @@ class TVBox:
 
     def get_current_event(self):
         today = date.today()
-        
+
         if today.month == 10 and today.day >= 30:
             return "halloween"
         if today.month == 11 and today.day == 1:
@@ -609,7 +621,7 @@ class TVBox:
 
         title = tk.Label(
             self.root,
-            text="📺 TV BOX",
+            text="📺 KOTKI TV",
             font=("DejaVu Sans", 30, "bold"),
             bg="#111111",
             fg="white",
@@ -627,15 +639,19 @@ class TVBox:
         )
         subtitle.pack(pady=(0, 18))
 
-        if birthday_text:
-            self.start_confetti_animation()
-
         show_frame = tk.Frame(self.root, bg="#111111")
         show_frame.pack()
 
-        def show_card(text, color, command, row, column, fg="white"):
-            card = tk.Frame(show_frame, bg="#111111")
-            card.grid(row=row, column=column, padx=7, pady=7)
+        def show_card(text, color, command, row, column, fg="white", dark=None):
+            dark = dark or "#181818"
+            card = tk.Frame(
+                show_frame,
+                bg=dark,
+                padx=3,
+                pady=3,
+            )
+            card.grid(row=row, column=column, padx=9, pady=9)
+
             button = tk.Button(
                 card,
                 text=text,
@@ -652,28 +668,40 @@ class TVBox:
                 cursor="hand2",
             )
             button.pack()
-            tk.Frame(card, bg=color, height=3).pack(fill="x", pady=(3, 0))
 
-        show_card("SIMPSONS", "#F5C518", lambda: self.show_show("Simpsons"), 0, 0)
-        show_card("FUTURAMA", "#245A9C", lambda: self.show_show("Futurama"), 0, 1)
-        show_card("ALF", "#A0522D", lambda: self.show_show("Alf"), 1, 1)
-        show_card("SOUTH PARK", "#356B3D", lambda: self.show_show("South Park"), 2, 0)
-        show_card("SPONGEBOB", "#2196F3", lambda: self.show_show("SpongeBob"), 1, 0)
+            accent = tk.Frame(card, bg=color, height=4)
+            accent.pack(fill="x", pady=(3, 0))
+
+            hover_color = self.lighten_color(color)
+            button.bind("<Enter>", lambda event, c=hover_color: button.config(bg=c))
+            button.bind("<Leave>", lambda event, c=color: button.config(bg=c))
+
+        show_card("SIMPSONS", "#F6C945", lambda: self.show_show("Simpsons"), 0, 0, "#171717", "#3A2F08")
+        show_card("FUTURAMA", "#2F8FCA", lambda: self.show_show("Futurama"), 0, 1, "white", "#0B3045")
+        show_card("ALF", "#B8663C", lambda: self.show_show("Alf"), 1, 0, "white", "#3E1F13")
+        show_card("SOUTH PARK", "#5F9F68", lambda: self.show_show("South Park"), 1, 1, "white", "#183A20")
+        show_card("SPONGEBOB", "#E87868", lambda: self.show_show("SpongeBob"), 2, 0, "white", "#4A2020")
 
         mystery_color = self.get_event_button_color()
         mystery_text = self.get_event_button_text()
-        mystery = tk.Frame(show_frame, bg="#111111")
-        mystery.grid(row=2, column=1, padx=7, pady=7)
+        mystery = tk.Frame(
+            show_frame,
+            bg="#251B32" if self.get_current_event() == "halloween" else "#2A1C1C" if self.get_current_event() == "christmas" else "#202020",
+            padx=3,
+            pady=3,
+        )
+        mystery.grid(row=2, column=1, padx=9, pady=9)
 
+        mystery_fg = "#B71C1C" if self.get_current_event() == "christmas" else "white"
         mystery_button = tk.Button(
             mystery,
             text=mystery_text,
             command=self.handle_event_button,
             font=("DejaVu Sans", 17, "bold"),
             bg=mystery_color,
-            fg=("#B71C1C" if self.get_current_event() == "christmas" else "white"),
+            fg=mystery_fg,
             activebackground=mystery_color,
-            activeforeground="#D3D3D3",
+            activeforeground=mystery_fg,
             relief="flat",
             bd=0,
             width=16,
@@ -681,7 +709,12 @@ class TVBox:
             cursor="hand2",
         )
         mystery_button.pack()
-        tk.Frame(mystery, bg=mystery_color, height=3).pack(fill="x", pady=(3, 0))
+        mystery_accent = tk.Frame(mystery, bg=mystery_color, height=4)
+        mystery_accent.pack(fill="x", pady=(3, 0))
+        if mystery_color != "white":
+            mystery_hover = self.lighten_color(mystery_color)
+            mystery_button.bind("<Enter>", lambda event, c=mystery_hover: mystery_button.config(bg=c))
+            mystery_button.bind("<Leave>", lambda event, c=mystery_color: mystery_button.config(bg=c))
 
         tk.Frame(self.root, bg="#333333", height=2, width=650).pack(pady=(14, 12))
         utility_frame = tk.Frame(self.root, bg="#111111")
@@ -1204,6 +1237,7 @@ class TVBox:
         selected = random.choice(files)
 
         self.clear()
+        self.set_movie_background(selected)
         self.root.configure(bg="#111111")
 
         tk.Label(
@@ -1274,7 +1308,7 @@ class TVBox:
 
         if event == "halloween":
             background_file = "halloween.gif"
-            title = "🎃 HAPPY HALLOWEEN 🎃"
+            title = "🎃 HALLOWEEN 🎃"
             reroll_text = "🎃 REROLL"
             play_text = "👻 PLAY"
             fallback_bg = "#180B20"
@@ -1283,11 +1317,11 @@ class TVBox:
             play_color = "#8B4513"
         else:
             background_file = "christmas.gif"
-            title = "🎄 HAPPY HOLIDAYS 🎄"
+            title = "🎄 CHRISTMAS 🎄"
             reroll_text = "🎁 REROLL"
             play_text = "🎄 PLAY"
             fallback_bg = "#102018"
-            title_color = "#FFFFFF"
+            title_color = "#E53935"
             reroll_color = "#B71C1C"
             play_color = "#2E7D32"
 
@@ -1387,7 +1421,7 @@ class TVBox:
             title_color = "#FF8C00"
         else:
             background_file = "christmas.gif"
-            title = "🎄 HAPPY HOLIDAYS 🎄" 
+            title = "🎄 CHRISTMAS"
             fallback_bg = "#102018"
             title_color = "#E53935"
 
