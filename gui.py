@@ -428,6 +428,12 @@ class TVBox:
 
     def clear(self):
         self.stop_event_animation()
+
+        # Birthday confetti may follow us between screens, but only on
+        # the two birthday dates. On every other day it is always removed.
+        if self.get_birthday_text() is None:
+            self.stop_confetti_animation()
+
         for widget in self.root.winfo_children():
             if widget is self.confetti_canvas:
                 continue
