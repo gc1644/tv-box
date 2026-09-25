@@ -687,7 +687,7 @@ class TVBox:
             button.bind("<Leave>", lambda event, c=color: button.config(bg=c))
 
         show_card("SIMPSONS", "#F6C945", lambda: self.show_show("Simpsons"), 0, 0, "white", "#3A2F08")
-        show_card("FUTURAMA", "#2F8FCA", lambda: self.show_show("Futurama"), 0, 1, "white", "#0B3045")
+        show_card("FUTURAMA", "#9C27B0", lambda: self.show_show("Futurama"), 0, 1, "white", "#0B3045")
         show_card("ALF", "#B8663C", lambda: self.show_show("Alf"), 1, 0, "white", "#3E1F13")
         show_card("SOUTH PARK", "#2E5D34", lambda: self.show_show("South Park"), 1, 1, "white", "#183A20")
         show_card("SPONGEBOB", "#42A5F5", lambda: self.show_show("SpongeBob"), 2, 0, "white", "#4A2020")
