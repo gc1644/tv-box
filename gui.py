@@ -686,11 +686,11 @@ class TVBox:
             button.bind("<Enter>", lambda event, c=hover_color: button.config(bg=c))
             button.bind("<Leave>", lambda event, c=color: button.config(bg=c))
 
-        show_card("SIMPSONS", "#F6C945", lambda: self.show_show("Simpsons"), 0, 0, "white", "#3A2F08")
+        show_card("SIMPSONS", "#FFFF00", lambda: self.show_show("Simpsons"), 0, 0, "black", "#3A2F08")
         show_card("FUTURAMA", "#311B5E", lambda: self.show_show("Futurama"), 0, 1, "white", "#0B3045")
-        show_card("ALF", "#B8663C", lambda: self.show_show("Alf"), 1, 0, "white", "#3E1F13")
-        show_card("SOUTH PARK", "#2E5D34", lambda: self.show_show("South Park"), 1, 1, "white", "#183A20")
-        show_card("SPONGEBOB", "#42A5F5", lambda: self.show_show("SpongeBob"), 2, 0, "white", "#4A2020")
+        show_card("ALF", "#B8663C", lambda: self.show_show("Alf"), 1, 1, "white", "#3E1F13")
+        show_card("SOUTH PARK", "#2E5D34", lambda: self.show_show("South Park"), 2, 0, "white", "#183A20")
+        show_card("SPONGEBOB", "#42A5F5", lambda: self.show_show("SpongeBob"), 1, 0, "white", "#4A2020")
 
         mystery_color = self.get_event_button_color()
         mystery_text = self.get_event_button_text()
@@ -1119,7 +1119,7 @@ class TVBox:
 
         if folder == self.media_dir:
             entries = self.get_classics_root_entries()
-            title = "🎬 MOVIES"
+            title = "🎬 CLASSICS"
         else:
             entries = self.get_classics_entries(folder)
             title = f"🎬 {folder.name.upper()}"
@@ -1331,7 +1331,7 @@ class TVBox:
             reroll_text = "🎁 REROLL"
             play_text = "🎄 PLAY"
             fallback_bg = "#102018"
-            title_color = "#E53935"
+            title_color = "#FFFFFF"
             reroll_color = "#B71C1C"
             play_color = "#2E7D32"
 
